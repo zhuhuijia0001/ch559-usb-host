@@ -1,0 +1,59 @@
+
+#ifndef _PINDEFINE_H_
+#define _PINDEFINE_H_
+
+#include "Gpio_map.h"
+
+#if 0
+/* led pin */
+#define PORT_PIN_LED1     1
+#define OFFSET_PIN_LED1   4
+#define DIR_PIN_LED1      PORT_DIR(PORT_PIN_LED1)
+#define PIN_LED1          MAKE_GPIO(PORT_PIN_LED1, OFFSET_PIN_LED1)
+
+#define PORT_PIN_LED2     1
+#define OFFSET_PIN_LED2   5
+#define DIR_PIN_LED2      PORT_DIR(PORT_PIN_LED2)
+#define PIN_LED2          MAKE_GPIO(PORT_PIN_LED2, OFFSET_PIN_LED2)
+
+#define PORT_PIN_LED3     1
+#define OFFSET_PIN_LED3   6
+#define DIR_PIN_LED3      PORT_DIR(PORT_PIN_LED3)
+#define PIN_LED3          MAKE_GPIO(PORT_PIN_LED3, OFFSET_PIN_LED3)
+
+#define PORT_PIN_LED4     1
+#define OFFSET_PIN_LED4   7
+#define DIR_PIN_LED4      PORT_DIR(PORT_PIN_LED4)
+#define PIN_LED4          MAKE_GPIO(PORT_PIN_LED4, OFFSET_PIN_LED4)
+#endif
+
+/* test led pin */
+#define PORT_PIN_TEST_LED     1
+#define OFFSET_PIN_TEST_LED   5
+#define DIR_PIN_TEST_LED      PORT_DIR(PORT_PIN_TEST_LED)
+#define PIN_TEST_LED          MAKE_GPIO(PORT_PIN_TEST_LED, OFFSET_PIN_TEST_LED)
+
+
+/* ps2 pin */
+#define PORT_PIN_KB_CLK   3
+#define OFFSET_PIN_KB_CLK 4
+#define DIR_PIN_KB_CLK    PORT_DIR(PORT_PIN_KB_CLK)
+#define PIN_KB_CLK        MAKE_GPIO(PORT_PIN_KB_CLK, OFFSET_PIN_KB_CLK)
+
+#define PORT_PIN_KB_DAT   3
+#define OFFSET_PIN_KB_DAT 5
+#define DIR_PIN_KB_DAT    PORT_DIR(PORT_PIN_KB_DAT)
+#define PIN_KB_DAT        MAKE_GPIO(PORT_PIN_KB_DAT, OFFSET_PIN_KB_DAT)
+
+#define PORT_PIN_MS_CLK   3
+#define OFFSET_PIN_MS_CLK 6
+#define DIR_PIN_MS_CLK    PORT_DIR(PORT_PIN_MS_CLK)
+#define PIN_MS_CLK        MAKE_GPIO(PORT_PIN_MS_CLK, OFFSET_PIN_MS_CLK)
+
+#define PORT_PIN_MS_DAT   3
+#define OFFSET_PIN_MS_DAT 7
+#define DIR_PIN_MS_DAT    PORT_DIR(PORT_PIN_MS_DAT)
+#define PIN_MS_DAT        MAKE_GPIO(PORT_PIN_MS_DAT, OFFSET_PIN_MS_DAT)
+
+#endif
+
