@@ -1,6 +1,8 @@
 
 #include "Type.h"
 
+#include "PinDefine.h"
+
 #include "Mcu.h"
 #include "System.h"
 #include "Gpio.h"
@@ -8,9 +10,7 @@
 #include "Timer2.h"
 
 #include "UsbHost.h"
-#include "UsbHid.h"
-
-#include "PinDefine.h"
+#include "KeyboardLed.h"
 
 #include "RecvBuffer.h"
 #include "Protocol.h"

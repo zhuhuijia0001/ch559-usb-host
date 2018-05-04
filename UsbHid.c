@@ -1,7 +1,6 @@
 #include "Type.h"
 #include "Protocol.h"
 
-#include "Mcu.h"
 #include "Uart.h"
 
 #include "UsbDef.h"
@@ -13,21 +12,6 @@
 #include "Packet.h"
 
 #include "Trace.h"
-
-static UINT8 keyboardLed = 0x00;
-
-void SetKeyboardLedStatus(UINT8 led)
-{
-	HAL_CRITICAL_STATEMENT(keyboardLed = led);
-}
-
-UINT8 GetKeyboardLedStatus(void)
-{
-	UINT8 led;
-	HAL_CRITICAL_STATEMENT(led = keyboardLed);
-
-	return led;
-}
 
 void ProcessHIDData(INTERFACE *pInterface, const UINT8 *pData, UINT16 len)
 {

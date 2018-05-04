@@ -6,6 +6,7 @@
 #include "UsbDef.h"
 #include "UsbHost.h"
 #include "UsbHid.h"
+#include "KeyboardLed.h"
 
 #include "Trace.h"
 
