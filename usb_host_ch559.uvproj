@@ -416,6 +416,11 @@
               <FileType>1</FileType>
               <FilePath>.\Ps2Mouse.c</FilePath>
             </File>
+            <File>
+              <FileName>KeyboardLed.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\KeyboardLed.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -515,6 +520,11 @@
               <FileName>Ps2Mouse.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Ps2Mouse.h</FilePath>
+            </File>
+            <File>
+              <FileName>KeyboardLed.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\KeyboardLed.h</FilePath>
             </File>
           </Files>
         </Group>

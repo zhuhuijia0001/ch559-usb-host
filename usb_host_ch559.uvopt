@@ -223,10 +223,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>28</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>134</TopLine>
-      <CurrentLine>141</CurrentLine>
+      <TopLine>94</TopLine>
+      <CurrentLine>108</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\Task.c</PathWithFileName>
       <FilenameWithoutPath>Task.c</FilenameWithoutPath>
@@ -293,10 +293,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>54</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
       <TopLine>1558</TopLine>
-      <CurrentLine>1571</CurrentLine>
+      <CurrentLine>1569</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\UsbHost.c</PathWithFileName>
       <FilenameWithoutPath>UsbHost.c</FilenameWithoutPath>
@@ -356,6 +356,20 @@
       <bDave2>0</bDave2>
       <PathWithFileName>.\Ps2Mouse.c</PathWithFileName>
       <FilenameWithoutPath>Ps2Mouse.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\KeyboardLed.c</PathWithFileName>
+      <FilenameWithoutPath>KeyboardLed.c</FilenameWithoutPath>
     </File>
   </Group>
 
@@ -629,6 +643,20 @@
       <bDave2>0</bDave2>
       <PathWithFileName>.\Ps2Mouse.h</PathWithFileName>
       <FilenameWithoutPath>Ps2Mouse.h</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>5</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\KeyboardLed.h</PathWithFileName>
+      <FilenameWithoutPath>KeyboardLed.h</FilenameWithoutPath>
     </File>
   </Group>
 
@@ -1973,7 +2001,7 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>5</ActiveTab>
+      <ActiveTab>1</ActiveTab>
       <Documents>
         <Doc>
           <Name>.\UsbHid.c</Name>
@@ -1983,9 +2011,9 @@
         </Doc>
         <Doc>
           <Name>.\Task.c</Name>
-          <ColumnNumber>0</ColumnNumber>
-          <TopLine>134</TopLine>
-          <CurrentLine>141</CurrentLine>
+          <ColumnNumber>28</ColumnNumber>
+          <TopLine>94</TopLine>
+          <CurrentLine>108</CurrentLine>
         </Doc>
         <Doc>
           <Name>SYSTEM.H</Name>
@@ -2007,9 +2035,9 @@
         </Doc>
         <Doc>
           <Name>.\UsbHost.c</Name>
-          <ColumnNumber>54</ColumnNumber>
+          <ColumnNumber>0</ColumnNumber>
           <TopLine>1558</TopLine>
-          <CurrentLine>1571</CurrentLine>
+          <CurrentLine>1569</CurrentLine>
         </Doc>
         <Doc>
           <Name>.\Ps2Mouse.c</Name>

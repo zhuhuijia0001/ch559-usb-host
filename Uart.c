@@ -31,6 +31,8 @@ void InitUART0()
     UINT32 x;
     UINT8 x2; 
 
+    CH559UART0Alter();
+    
     SM0 = 0;
     SM1 = 1;
     SM2 = 0;                                                                   //串口0使用模式1
