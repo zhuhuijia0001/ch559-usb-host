@@ -21,8 +21,8 @@ typedef struct _RECV_STRUCT
 	UINT8          TimerCounter;
 } RECV_STRUCT;
 
-#define BUFFER_BLOCK_SIZE   10
-#define BUFFER_BLOCK_COUNT  8
+#define BUFFER_BLOCK_SIZE   4
+#define BUFFER_BLOCK_COUNT  4
 
 static UINT8X s_buffer[BUFFER_BLOCK_SIZE * BUFFER_BLOCK_COUNT];
 
@@ -58,7 +58,7 @@ BOOL RecvBufferTimerout(void)
 	return FALSE;
 }
 
-void RecvBufferOneByte(UINT8 ch)
+void RecvBufferOneByte(UINT8 ch) using 1
 {
 	if (s_recvState == RECV_STATE_IDLE)
 	{
@@ -117,14 +117,16 @@ void InitRecvBuffer(void)
 	s_recvStruct.RecvBuffer.pBufferEnd   = s_buffer + sizeof(s_buffer);
 	s_recvStruct.RecvBuffer.pBufferIn    = s_buffer;
 	s_recvStruct.RecvBuffer.pBufferOut   = s_buffer;
+	s_recvStruct.RecvBuffer.BlockSize    = BUFFER_BLOCK_SIZE;
+	
 	s_recvStruct.RPtr                    = 0;
 
 	s_recvStruct.TimerCounter            = 0;
 }
 
-BOOL CheckRecvBuffer(void)
+BOOL IsRecvBufferEmpty(void)
 {
-	return s_recvStruct.RecvBuffer.pBufferIn != s_recvStruct.RecvBuffer.pBufferOut;
+	return s_recvStruct.RecvBuffer.pBufferIn == s_recvStruct.RecvBuffer.pBufferOut;
 }
 
 UINT8 *GetOutputBuffer(void)

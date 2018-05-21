@@ -31,7 +31,9 @@ void InitUART0()
     UINT32 x;
     UINT8 x2; 
 
+#ifdef DEBUG
     CH559UART0Alter();
+#endif
     
     SM0 = 0;
     SM1 = 1;
@@ -40,10 +42,10 @@ void InitUART0()
     RCLK = 0;                                                                  //UART0接收时钟
     TCLK = 0;                                                                  //UART0发送时钟
     PCON |= SMOD;
-    x = 10 * FREQ_SYS / BUAD / 16;                                             //如果更改主频，注意x的值不要溢出                            
+    x = 10 * FREQ_SYS / BUAD_RATE / 16;                                             //如果更改主频，注意x的值不要溢出                            
     x2 = x % 10;
     x /= 10;
-    if ( x2 >= 5 ) x ++;                                                       //四舍五入
+    if ( x2 >= 5 ) x++;                                                       //四舍五入
 
     TMOD = TMOD & ~ bT1_GATE & ~ bT1_CT & ~ MASK_T1_MOD | bT1_M1;              //0X20，Timer1作为8位自动重载定时器
     T2MOD = T2MOD | bTMR_CLK | bT1_CLK;                                        //Timer1时钟选择

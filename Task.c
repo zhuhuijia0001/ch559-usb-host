@@ -29,7 +29,7 @@ static BOOL volatile s_CheckUsbPort1 = FALSE;
 
 static UINT8X s_Ps2Data[KEYBOARD_LEN + 2];
 
-void Uart0Isr(void) interrupt INT_NO_UART0 using 0
+void Uart0Isr(void) interrupt INT_NO_UART0 using 1
 {	
 	if (RI)
 	{
@@ -211,7 +211,7 @@ void ProcessPs2Port()
 
 void ProcessKeyboardLed()
 {
-	if (CheckRecvBuffer())
+	if (!IsRecvBufferEmpty())
 	{
 		UINT8 *packet = GetOutputBuffer();
 		UINT8 id = packet[0];
@@ -221,7 +221,7 @@ void ProcessKeyboardLed()
 		{
 		case ID_LED_STATUS:
 			{
-				UINT8 led = packet[0];
+				UINT8 led = pData[0];
 				UINT8 ledSave = GetKeyboardLedStatus();
 				if (led != ledSave)
 				{
@@ -232,6 +232,8 @@ void ProcessKeyboardLed()
 
 					SetKeyboardLedStatus(led);
 				}
+
+				CH559UART0SendData(&led, 1);
 			}
 			
 			break;

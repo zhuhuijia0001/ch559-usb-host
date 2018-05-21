@@ -4,7 +4,7 @@
 
 extern void InitRecvBuffer(void);
 
-extern BOOL CheckRecvBuffer(void);
+extern BOOL IsRecvBufferEmpty(void);
 
 extern UINT8 *GetOutputBuffer(void);
 
