@@ -14,7 +14,7 @@
 #ifdef USE_PLL
 	#define COUNT_FACTOR    4
 #else
-	#define COUNT_FACTOR    1
+	#define COUNT_FACTOR    2
 #endif
 
 void DisablePs2KeyboardPort()
@@ -52,7 +52,14 @@ static BOOL SendPs2KeyboardByte(UINT8 c)
 	
 	for (i = 0; i < 8; i++)
 	{
-		PIN_KB_DAT = c & 0x01;
+	    if (c & 0x01)
+	    {
+            SET_GPIO_BIT(PIN_KB_DAT);
+	    }
+	    else
+	    {
+            CLR_GPIO_BIT(PIN_KB_DAT);
+	    }
 		
 		j = 500 * COUNT_FACTOR;
 		do
@@ -277,7 +284,7 @@ static BOOL ReceivePs2KeyboardByte(UINT8 *pData)
 			} while (!GET_GPIO_BIT(PIN_KB_CLK));
 		
 			*pData = dat;
-	
+
 			return TRUE;
 		}
 		else
@@ -295,13 +302,8 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 	UINT16 i;
 	UINT8 dat;
 	UINT8 ptr = 0;
-	UINT8 sum = 0;
 	
 	UINT8 res = PS2_KB_NONE;
-	
-	pPs2[ptr] = ID_PS2_KEYBOARD;
-	sum ^= pPs2[ptr];
-	ptr++;
 	
 	i = 600 /** COUNT_FACTOR*/;
 	while (!ReceivePs2KeyboardByte(&dat))
@@ -313,11 +315,10 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			return res;
 		}
 	}
-	
+
 	pPs2[ptr] = dat;
 	ptr++;
-	sum ^= dat;
-		
+
 	if (dat == 0xe0)
 	{
 		//接收e0打头的数据包
@@ -334,8 +335,7 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 		pPs2[ptr] = dat;
 		ptr++;
-		sum ^= dat;
-			
+
 		if (dat == 0xf0)
 		{
 			//断码
@@ -352,7 +352,6 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 				
 			pPs2[ptr] = dat;
 			ptr++;
-			sum ^= dat;
 				
 			if (dat == 0x12) 
 			{
@@ -394,7 +393,6 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 		pPs2[ptr] = dat;
 		ptr++;
-		sum ^= dat;
 			
 		if (dat == 0x14)
 		{
@@ -411,7 +409,6 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 			pPs2[ptr] = dat;
 			ptr++;
-			sum ^= dat;
 		}
 		else
 		{
@@ -434,14 +431,13 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 			pPs2[ptr] = dat;
 			ptr++;
-			sum ^= dat;
 		}
 		else
 		{
 			res = PS2_KB_INVALID_DATA;
 			return res;
 		}
-			
+
 		if (dat == 0xe1)
 		{
 			i = 1000 * COUNT_FACTOR;
@@ -457,7 +453,6 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 			pPs2[ptr] = dat;
 			ptr++;
-			sum ^= dat;
 		}
 		else
 		{
@@ -480,7 +475,6 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 			pPs2[ptr] = dat;
 			ptr++;
-			sum ^= dat;
 		}
 		else
 		{
@@ -503,14 +497,13 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 			pPs2[ptr] = dat;
 			ptr++;
-			sum ^= dat;
 		}
 		else
 		{
 			res = PS2_KB_INVALID_DATA;
 			return res;
 		}
-			
+
 		if (dat == 0xf0)
 		{
 			i = 1000 * COUNT_FACTOR;
@@ -526,14 +519,13 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 			pPs2[ptr] = dat;
 			ptr++;
-			sum ^= dat;
 		}
 		else
 		{
 			res = PS2_KB_INVALID_DATA;
 			return res;
 		}
-			
+
 		if (dat == 0x77)
 		{
 			goto VALID_DATA;
@@ -560,7 +552,6 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 			
 		pPs2[ptr] = dat;
 		ptr++;
-		sum ^= dat;
 			
 		goto VALID_DATA;
 	}
@@ -577,13 +568,11 @@ UINT8 TransceivePs2KeyboardPort(UINT8 *pPs2)
 	}
 	
 VALID_DATA:
-	for ( ; ptr < KEYBOARD_LEN - 1; ptr++)
+	for ( ; ptr < KEYBOARD_LEN; ptr++)
 	{
 		pPs2[ptr] = 0x00;
 	}
-	
-	pPs2[ptr] = sum;
-	
+
 	res = PS2_KB_VALID_DATA;
 	
 	return res;	

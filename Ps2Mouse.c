@@ -14,7 +14,7 @@
 #ifdef USE_PLL
 	#define COUNT_FACTOR    4
 #else
-	#define COUNT_FACTOR    1
+	#define COUNT_FACTOR    2
 #endif
 
 #define STANDARD_MOUSE_LEN      3
@@ -133,7 +133,7 @@ static BOOL SendPs2MouseByte(UINT8 c)
 		{
 			return FALSE;
 		}
-	} while (!(PIN_MS_CLK));
+	} while (!GET_GPIO_BIT(PIN_MS_CLK));
 	
 	SET_GPIO_INPUT(PIN_MS_DAT);
 	
@@ -307,17 +307,12 @@ UINT8 TransceivePs2MousePort(UINT8 *pPs2)
 	UINT16 i;
 	UINT8 dat;
 	UINT8 ptr = 0;
-	UINT8 sum = 0;
 	
 	UINT8 j;
 	
 	UINT8 header;
 	
 	UINT8 res = PS2_MS_NONE;
-	
-	pPs2[ptr] = ID_PS2_MOUSE;
-	sum ^= pPs2[ptr];
-	ptr++;
 	
 	i = 800 /** COUNT_FACTOR*/;
 	while (!ReceivePs2MouseByte(&dat))
@@ -332,7 +327,6 @@ UINT8 TransceivePs2MousePort(UINT8 *pPs2)
 	
 	pPs2[ptr] = dat;
 	ptr++;
-	sum ^= dat;
 		
 	if (dat == 0xaa)
 	{
@@ -358,7 +352,6 @@ UINT8 TransceivePs2MousePort(UINT8 *pPs2)
 			
 		pPs2[ptr] = dat;
 		ptr++;
-		sum ^= dat;
 	}
 		
 	if (s_ps2MouseDataLen == STANDARD_MOUSE_LEN)
@@ -367,8 +360,6 @@ UINT8 TransceivePs2MousePort(UINT8 *pPs2)
 			
 		ptr++;
 	}
-		
-	pPs2[ptr] = sum;
 		
 	if (header & 0xc0)
 	{
@@ -383,7 +374,7 @@ UINT8 TransceivePs2MousePort(UINT8 *pPs2)
 	return res;
 }
 
-void InitPs2Mouse()
+BOOL InitPs2Mouse()
 {
 	UINT16 i;
 	
@@ -394,7 +385,7 @@ void InitPs2Mouse()
 	//¸´Î»
 	if (!SendPs2MouseByte(0xff))
 	{
-		return;
+		return FALSE;
 	}
 		
 	i = 1000 * COUNT_FACTOR;
@@ -403,7 +394,7 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 		
@@ -418,7 +409,7 @@ void InitPs2Mouse()
 			k--;
 			if (k == 0)
 			{
-				return;
+				return FALSE;
 			}
 		}
 	}
@@ -429,14 +420,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0xf3
 	if (!SendPs2MouseByte(0xf3))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -445,14 +436,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0xc8
 	if (!SendPs2MouseByte(0xc8))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -461,14 +452,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}	
 	
 	//0xf3
 	if (!SendPs2MouseByte(0xf3))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -477,14 +468,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0x64
 	if (!SendPs2MouseByte(0x64))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -493,14 +484,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}	
 	
 	//0xf3
 	if (!SendPs2MouseByte(0xf3))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -509,14 +500,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0x50
 	if (!SendPs2MouseByte(0x50))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -525,14 +516,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}	
 	
 	//0xf2
 	if (!SendPs2MouseByte(0xf2))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -541,7 +532,7 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
@@ -551,7 +542,7 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
@@ -569,7 +560,7 @@ void InitPs2Mouse()
 	//0xe8
 	if (!SendPs2MouseByte(0xe8))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -578,14 +569,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0x03
 	if (!SendPs2MouseByte(0x03))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -594,14 +585,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0xe6
 	if (!SendPs2MouseByte(0xe6))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -610,14 +601,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0xf3
 	if (!SendPs2MouseByte(0xf3))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -626,14 +617,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0x28
 	if (!SendPs2MouseByte(0x28))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -642,14 +633,14 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
 	
 	//0xf4
 	if (!SendPs2MouseByte(0xf4))
 	{
-		return;
+		return FALSE;
 	}
 	
 	i = 1000 * COUNT_FACTOR;
@@ -658,8 +649,11 @@ void InitPs2Mouse()
 		i--;
 		if (i == 0)
 		{
-			return;
+			return FALSE;
 		}
 	}
+
+	return TRUE;
 }
+
 

@@ -42,7 +42,7 @@ static UINT8 volatile s_sum = 0;
 static UINT8 volatile s_left = 0;
 static RECV_STATE volatile s_recvState = RECV_STATE_IDLE;
 
-BOOL RecvBufferTimerout(void)
+void RecvBufferTimerout(void) using 2
 {
 	if (s_recvStruct.TimerCounter > 0)
 	{
@@ -50,12 +50,8 @@ BOOL RecvBufferTimerout(void)
 		if (s_recvStruct.TimerCounter == 0)
 		{
 			s_recvState = RECV_STATE_IDLE;
-			
-			return TRUE;
 		}
 	}
-
-	return FALSE;
 }
 
 void RecvBufferOneByte(UINT8 ch) using 1

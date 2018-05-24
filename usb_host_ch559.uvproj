@@ -526,6 +526,11 @@
               <FileType>5</FileType>
               <FilePath>.\KeyboardLed.h</FilePath>
             </File>
+            <File>
+              <FileName>ProcessPs2Data.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\ProcessPs2Data.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

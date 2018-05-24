@@ -11,7 +11,7 @@ enum
 
 extern void DisablePs2MousePort(void);
 extern UINT8 TransceivePs2MousePort(UINT8 *pPs2);
-extern void InitPs2Mouse(void);
+extern BOOL InitPs2Mouse(void);
 
 #endif
 

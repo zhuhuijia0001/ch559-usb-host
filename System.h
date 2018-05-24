@@ -21,7 +21,11 @@
 #define	 FREQ_SYS	48000000ul	  //系统主频48MHz
 
 #ifndef  BUAD_RATE
+#ifdef DEBUG
+#define  BUAD_RATE  115200ul
+#else
 #define  BUAD_RATE  100000ul
+#endif
 #endif
 
 void CfgFsys(void);                        //CH559时钟选择和配置

@@ -15,16 +15,21 @@
 *******************************************************************************/
 UINT8 CH559GPIODrivCap(UINT8 Port,UINT8 Cap)
 {
-	if(Port >= 4){
-		return FAIL;
-	}
-	if(Cap == 0){                                                               //驱动电流最大5mA
-    PORT_CFG &= ~(bP0_DRV << Port);
-  }
-  else{		
-    PORT_CFG |= (bP0_DRV << Port);                                             //驱动电流最大20mA
-  }
-  return SUCCESS;
+    if (Port >= 4)
+    {
+    	return FAIL;
+    }
+    
+    if (Cap == 0)
+    {                                                               //驱动电流最大5mA
+        PORT_CFG &= ~(bP0_DRV << Port);
+    }
+    else
+    {		
+        PORT_CFG |= (bP0_DRV << Port);                                             //驱动电流最大20mA
+    }
+
+    return SUCCESS;
 }
 
 /*******************************************************************************
@@ -46,66 +51,121 @@ UINT8 CH559GPIODrivCap(UINT8 Port,UINT8 Cap)
 *******************************************************************************/
 UINT8 CH559GPIOModeSelt(UINT8 Port,UINT8 Mode,UINT8 PinNum)
 {
-  UINT8 Pn_DIR,Pn_PU;
-	if(Port >= 4){
-		return FAIL;
-	}
+    UINT8 Pn_DIR,Pn_PU;
+    if (Port >= 4)
+    {
+    	return FAIL;
+    }
 
-  switch (Mode){
-    	case 0:                              //仅输入，无上拉
-    		PORT_CFG &= ~(bP0_OC << Port);
-    		Pn_DIR &= ~(1<<PinNum);
-    		Pn_PU &= ~(1<<PinNum);
-    		break;
-    	case 1:                              //仅输入，带上拉
-    		PORT_CFG &= ~(bP0_OC << Port);
-    		Pn_DIR &= ~(1<<PinNum);
-    		Pn_PU |= 1<<PinNum;
-    		break;
-    	case 2:                              //推挽输出，高低电平强驱动
-    		PORT_CFG &= ~(bP0_OC << Port);
-    		Pn_DIR |= (1<<PinNum);
-    		break;
-    	case 3:                              //开漏输出，无上拉，支持输入
-    		PORT_CFG |= (bP0_OC << Port);
-    		Pn_DIR &= ~(1<<PinNum);
-    		Pn_PU &= ~(1<<PinNum);
-    		break;
-    	case 4:                              //开漏输出，无上拉,当转变输出由低到高时，仅驱动2个时钟的高电平
-    		PORT_CFG |= (bP0_OC << Port);
-    		Pn_DIR |= 1<<PinNum;
-    		Pn_PU &= ~(1<<PinNum);
-    		break;
-    	case 5:                              //弱准双向(标准51模式)，开漏输出，带上拉
-    		PORT_CFG |= (bP0_OC << Port);
-    		Pn_DIR &= ~(1<<PinNum);
-    		Pn_PU |= 1<<PinNum;
-    		break;
-    	case 6:                              //准双向(标准51模式)，开漏输出，带上拉，当转变输出由低到高时，仅驱动2个时钟的高电平
-    		PORT_CFG |= (bP0_OC << Port);
-    		Pn_DIR |= 1<<PinNum;
-    		Pn_PU |= 1<<PinNum;
-    		break;
-    	default:
-    		break;
-	}
-	if(Port == 0){
-		P0_DIR = Pn_DIR;
+    switch (Port)
+    {
+    case 0:
+        Pn_DIR = P0_DIR;
+		Pn_PU = P0_PU;
+		
+        break;
+
+    case 1:
+        Pn_DIR = P1_DIR;
+		Pn_PU = P1_PU;
+		
+        break;
+
+    case 2:
+        Pn_DIR = P2_DIR;
+		Pn_PU = P2_PU;
+		
+        break;
+
+    case 3:
+        Pn_DIR = P3_DIR;
+		Pn_PU = P3_PU;
+		
+        break;
+    }
+    
+    switch (Mode)
+    {
+    case 0:                              //仅输入，无上拉
+    	PORT_CFG &= ~(bP0_OC << Port);
+    	Pn_DIR &= ~(1<<PinNum);
+    	Pn_PU &= ~(1<<PinNum);
+    	
+    	break;
+    	
+    case 1:                              //仅输入，带上拉
+    	PORT_CFG &= ~(bP0_OC << Port);
+    	Pn_DIR &= ~(1<<PinNum);
+    	Pn_PU |= 1<<PinNum;
+    	
+    	break;
+    	
+    case 2:                              //推挽输出，高低电平强驱动
+    	PORT_CFG &= ~(bP0_OC << Port);
+    	Pn_DIR |= (1<<PinNum);
+    	
+    	break;
+    	
+    case 3:                              //开漏输出，无上拉，支持输入
+    	PORT_CFG |= (bP0_OC << Port);
+    	Pn_DIR &= ~(1<<PinNum);
+    	Pn_PU &= ~(1<<PinNum);
+    	
+    	break;
+    	
+    case 4:                              //开漏输出，无上拉,当转变输出由低到高时，仅驱动2个时钟的高电平
+    	PORT_CFG |= (bP0_OC << Port);
+    	Pn_DIR |= 1<<PinNum;
+    	Pn_PU &= ~(1<<PinNum);
+    	
+    	break;
+    	
+    case 5:                              //弱准双向(标准51模式)，开漏输出，带上拉
+    	PORT_CFG |= (bP0_OC << Port);
+    	Pn_DIR &= ~(1<<PinNum);
+    	Pn_PU |= 1<<PinNum;
+    	
+    	break;
+    	
+    case 6:                              //准双向(标准51模式)，开漏输出，带上拉，当转变输出由低到高时，仅驱动2个时钟的高电平
+    	PORT_CFG |= (bP0_OC << Port);
+    	Pn_DIR |= 1<<PinNum;
+    	Pn_PU |= 1<<PinNum;
+    	
+    	break;
+    	
+    default:
+    	break;
+    }
+
+    switch (Port)
+    {
+    case 0:
+        P0_DIR = Pn_DIR;
 		P0_PU = Pn_PU;
-	}
-	if(Port == 1){
-		P1_DIR = Pn_DIR;
+		
+        break;
+
+    case 1:
+        P1_DIR = Pn_DIR;
 		P1_PU = Pn_PU;
-	}
-	if(Port == 2){
-		P2_DIR = Pn_DIR;
+		
+        break;
+
+    case 2:
+        P2_DIR = Pn_DIR;
 		P2_PU = Pn_PU;
-	}
-	if(Port == 3){
-		P3_DIR = Pn_DIR;
+		
+        break;
+
+    case 3:
+        P3_DIR = Pn_DIR;
 		P3_PU = Pn_PU;
-	}
-  return SUCCESS;
+		
+        break;
+    }
+
+    return SUCCESS;
 }
 
 /*******************************************************************************

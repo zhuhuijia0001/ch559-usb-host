@@ -9,11 +9,24 @@ extern "C" {
 
 #ifndef TRUE
 #define TRUE    1
+#endif
+
+#ifndef FALSE
 #define FALSE   0
 #endif
+
+#ifndef true
+#define true    1
+#endif
+
+#ifndef false
+#define false   0
+#endif
+
 #ifndef NULL
 #define NULL    0
 #endif
+
 
 #ifndef BOOL
 typedef bit                             BOOL;
@@ -111,6 +124,13 @@ typedef unsigned char volatile pdata  *PUINT8PV;
 #ifndef PUINT8C
 typedef const unsigned char code      *PUINT8C;
 #endif
+
+typedef bit             bool;
+
+typedef unsigned char   uchar;
+typedef unsigned short  ushort;
+typedef unsigned int    uint;
+typedef unsigned long   ulong;
 
 #ifndef STRUCT_OFFSET
 #define STRUCT_OFFSET( s, m )       ( (UINT8)( & (((s) *)0) -> (m) ) )  /* get the offset address for a member of a structure */

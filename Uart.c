@@ -79,7 +79,7 @@ UINT8  CH559UART0RcvByte( )
 
 static BOOL volatile s_sent = FALSE;
 
-void SetUart0Sent(void)
+void SetUart0Sent(void) using 1
 {
 	s_sent = TRUE;
 }

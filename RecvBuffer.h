@@ -10,7 +10,7 @@ extern UINT8 *GetOutputBuffer(void);
 
 extern void RecvBufferOneByte(UINT8 ch);
 
-extern BOOL RecvBufferTimerout(void);
+extern void RecvBufferTimerout(void);
 
 #endif
 

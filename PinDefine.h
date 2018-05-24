@@ -27,12 +27,13 @@
 #define PIN_LED4          MAKE_GPIO(PORT_PIN_LED4, OFFSET_PIN_LED4)
 #endif
 
+#ifdef DEBUG
 /* test led pin */
-#define PORT_PIN_TEST_LED     1
-#define OFFSET_PIN_TEST_LED   5
+#define PORT_PIN_TEST_LED     3
+#define OFFSET_PIN_TEST_LED   1
 #define DIR_PIN_TEST_LED      PORT_DIR(PORT_PIN_TEST_LED)
 #define PIN_TEST_LED          MAKE_GPIO(PORT_PIN_TEST_LED, OFFSET_PIN_TEST_LED)
-
+#endif
 
 /* ps2 pin */
 #define PORT_PIN_KB_CLK   3
