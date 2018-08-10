@@ -7,7 +7,7 @@
 #include "UsbHost.h"
 #include "UsbHid.h"
 
-#include "ParseMouseData.h"
+#include "ParseHidData.h"
 
 #include "Packet.h"
 
@@ -19,16 +19,32 @@ void ProcessHIDData(INTERFACE *pInterface, const UINT8 *pData, UINT16 len)
 	UINT8 pktLen;
 	UINT8 interfaceClass = pInterface->InterfaceClass;
 	UINT8 interfaceProtocol = pInterface->InterfaceProtocol;
-	
+
+	len = len;
 	if (interfaceClass == USB_DEV_CLASS_HID)
 	{
-		if (interfaceProtocol == HID_PROTOCOL_KEYBOARD
-			&& len == KEYBOARD_LEN)
-		{
+		if (interfaceProtocol == HID_PROTOCOL_KEYBOARD)
+		{	    
 #ifdef DEBUG
 			UINT16 i;
 #endif		
-			if (BuildUsbKeyboardPacket(buffer, sizeof(buffer), &pktLen, pData))
+
+#ifdef DEBUG		
+            TRACE("keyboard data:\r\n");
+            for (i = 0; i < len; i++)
+            {
+                TRACE1("0x%02X ", (UINT16)pData[i]);
+            }
+            TRACE("\r\n");
+#endif	
+
+            if (!UsbKeyboardParse(pData, NULL, &pInterface->HidSegStruct))
+            {
+                return;
+            }
+            
+			if (BuildUsbKeyboardPacket(buffer, sizeof(buffer), &pktLen, 
+			        pData + pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_INDEX].segStart / 8))
 			{
 #ifdef DEBUG
 				for (i = 0; i < pktLen; i++)
@@ -61,7 +77,7 @@ void ProcessHIDData(INTERFACE *pInterface, const UINT8 *pData, UINT16 len)
 			TRACE("\r\n");
 #endif	
 
-			UsbMouseParse(pData, mouseData, &pInterface->MouseDataStruct);
+			UsbMouseParse(pData, mouseData, &pInterface->HidSegStruct);
 						
 			if (BuildUsbMousePacket(buffer, sizeof(buffer), &pktLen, mouseData))
 			{

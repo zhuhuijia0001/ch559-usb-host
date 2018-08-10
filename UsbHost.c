@@ -879,8 +879,7 @@ ONE_FINISH:
 	return TRUE;
 }
 
-
-static UINT8 ParseMouseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, MOUSEDATA_STRUCT *pMouseDataStruct)
+static UINT8 ParseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT *const pHidSegStruct)
 {
 	UINT8 i, j;
 	
@@ -895,18 +894,6 @@ static UINT8 ParseMouseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, MO
 	const UINT8 *p = pDescriptor;
 	HID_ITEM_INFO hid_item;
 	i = 0;
-	
-	pMouseDataStruct->buttonStart = 0xff;
-	pMouseDataStruct->buttonSize = 0;
-	
-	pMouseDataStruct->xStart = 0xff;
-	pMouseDataStruct->xSize = 0;
-	
-	pMouseDataStruct->yStart = 0xff;
-	pMouseDataStruct->ySize = 0;
-	
-	pMouseDataStruct->wheelStart = 0xff;
-	pMouseDataStruct->wheelSize = 0;
 	
 	while (i < len)
 	{
@@ -932,9 +919,24 @@ static UINT8 ParseMouseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, MO
 					if (!(dat & 0x01))
 					{
 						//为变量
-						pMouseDataStruct->buttonStart = startBit;
-						pMouseDataStruct->buttonSize = curReportSize * curReportCount;
+						pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segStart = startBit;
+						pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize = curReportSize * curReportCount;
 					}
+					
+					startBit += curReportSize * curReportCount;
+				}
+				else if (curUsagePage == USAGE_PAGE_KEYBOARD)
+				{
+                    //是键盘
+                    dat = *(p + 1);
+
+                    
+                    if (pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize == 0)
+                    {
+                        pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segStart = startBit;
+                    }
+                    
+                    pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize += curReportSize * curReportCount;
 					
 					startBit += curReportSize * curReportCount;
 				}
@@ -951,26 +953,26 @@ static UINT8 ParseMouseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, MO
 								if (arrUsage[j].usage[0] == USAGE_X)
 								{
 									//是x
-									pMouseDataStruct->xStart = startBit;
-									pMouseDataStruct->xSize = curReportSize;
+									pHidSegStruct->HIDSeg[HID_SEG_X_INDEX].segStart = startBit;
+									pHidSegStruct->HIDSeg[HID_SEG_X_INDEX].segSize = curReportSize;
 									
-									startBit += pMouseDataStruct->xSize;
+									startBit += curReportSize;
 								}
 								else if (arrUsage[j].usage[0] == USAGE_Y)
 								{
 									//是y
-									pMouseDataStruct->yStart = startBit;
-									pMouseDataStruct->ySize = curReportSize;
-
-									startBit += pMouseDataStruct->ySize;
+									pHidSegStruct->HIDSeg[HID_SEG_Y_INDEX].segStart = startBit;
+									pHidSegStruct->HIDSeg[HID_SEG_Y_INDEX].segSize = curReportSize;
+                                    
+									startBit += curReportSize;
 								}
 								else if (arrUsage[j].usage[0] == USAGE_WHEEL)
 								{
 									//是滚轮
-									pMouseDataStruct->wheelStart = startBit;
-									pMouseDataStruct->wheelSize = curReportSize;
-
-									startBit += pMouseDataStruct->wheelSize;
+									pHidSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segStart = startBit;
+									pHidSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segSize = curReportSize;
+                                    
+									startBit += curReportSize;
 								}
 								else
 								{
@@ -1067,6 +1069,30 @@ static UINT8 ParseMouseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, MO
 	return TRUE;
 }
 
+static UINT8 ParseKeyboardReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT *const pHidSegStruct)
+{
+    pHidSegStruct->HIDSeg[HID_SEG_KEYBOARD_INDEX].segStart = 0xff;
+    pHidSegStruct->HIDSeg[HID_SEG_KEYBOARD_INDEX].segSize = 0;
+
+    return ParseReportDescriptor(pDescriptor, len, pHidSegStruct);
+}
+
+static UINT8 ParseMouseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT *const pHidSegStruct)
+{
+    pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segStart = 0xff;
+    pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize = 0;
+
+    pHidSegStruct->HIDSeg[HID_SEG_X_INDEX].segStart = 0xff;
+    pHidSegStruct->HIDSeg[HID_SEG_X_INDEX].segSize = 0;
+
+    pHidSegStruct->HIDSeg[HID_SEG_Y_INDEX].segStart = 0xff;
+    pHidSegStruct->HIDSeg[HID_SEG_Y_INDEX].segSize = 0;
+
+    pHidSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segStart = 0xff;
+    pHidSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segSize = 0;
+    
+    return ParseReportDescriptor(pDescriptor, len, pHidSegStruct);
+}
 
 //enum device
 static BOOL EnumerateHubPort(USB_HUB_PORT *pUsbHubPort, UINT8 addr)
@@ -1215,7 +1241,25 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *pUsbHubPort, UINT8 addr)
 				TRACE1("InterfaceProtocol:%bd\r\n", pUsbDevice->Interface[i].InterfaceProtocol);
 				if (pUsbDevice->Interface[i].InterfaceProtocol == HID_PROTOCOL_KEYBOARD)
 				{
-					UINT8 led = GetKeyboardLedStatus();
+				    UINT8 led;
+				    
+				    s = GetReportDescriptor(pUsbDevice->MaxPacketSize0, i, ReceiveDataBuffer, sizeof(ReceiveDataBuffer), &len);
+							
+					if (s != ERR_SUCCESS)
+					{							
+						return FALSE;
+					}
+							
+					TRACE("GetKeyboardReportDescriptor OK\r\n");
+					TRACE1("report descr len:%d\r\n", len);
+					
+				    ParseKeyboardReportDescriptor(ReceiveDataBuffer, len, &pUsbDevice->Interface[i].HidSegStruct);
+
+				    TRACE2("keyboardStart=%bd,keyboardSize=%bd\r\n", 
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_INDEX].segStart,
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_INDEX].segSize);
+        			    
+					led = GetKeyboardLedStatus();
 					SetReport(pUsbDevice->MaxPacketSize0, i, &led, sizeof(led));	
 					TRACE("SetReport\r\n");			
 				}
@@ -1228,7 +1272,7 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *pUsbHubPort, UINT8 addr)
 						return FALSE;
 					}
 							
-					TRACE("GetReportDescriptor OK\r\n");
+					TRACE("GetMouseReportDescriptor OK\r\n");
 					TRACE1("report descr len:%d\r\n", len);
 
 		#ifdef DEBUG
@@ -1242,17 +1286,19 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *pUsbHubPort, UINT8 addr)
 					}
 		#endif
 		
-					ParseMouseReportDescriptor(ReceiveDataBuffer, len, &pUsbDevice->Interface[i].MouseDataStruct);
-					
-
-					TRACE1("buttonStart= %bd,", pUsbDevice->Interface[i].MouseDataStruct.buttonStart); 						
-					TRACE1("buttonSize=%bd,", pUsbDevice->Interface[i].MouseDataStruct.buttonSize);							
-					TRACE1("xStart=%bd,", pUsbDevice->Interface[i].MouseDataStruct.xStart);
-					TRACE1("xSize=%bd,", pUsbDevice->Interface[i].MouseDataStruct.xSize);		
-					TRACE1("yStart=%bd,", pUsbDevice->Interface[i].MouseDataStruct.yStart);		
-					TRACE1("ySize=%bd,", pUsbDevice->Interface[i].MouseDataStruct.ySize);	
-					TRACE1("wheelStart=%bd,", pUsbDevice->Interface[i].MouseDataStruct.wheelStart);
-					TRACE1("wheelSize=%bd\r\n", pUsbDevice->Interface[i].MouseDataStruct.wheelSize);
+					ParseMouseReportDescriptor(ReceiveDataBuffer, len, &pUsbDevice->Interface[i].HidSegStruct);						
+        			TRACE2("buttonStart=%bd,buttonSize=%bd\r\n", 
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].segStart,
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].segSize);
+        			TRACE2("xStart=%bd,xSize=%bd\r\n", 
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_X_INDEX].segStart,
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_X_INDEX].segSize);
+        			TRACE2("yStart=%bd,ySize=%bd\r\n", 
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_Y_INDEX].segStart,
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_Y_INDEX].segSize);
+        			TRACE2("wheelStart=%bd,wheelSize=%bd\r\n", 
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_WHEEL_INDEX].segStart,
+        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_WHEEL_INDEX].segSize);
 				}
 			}		
 		}

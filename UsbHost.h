@@ -74,8 +74,9 @@ typedef struct _ENDPOINT
 #define TYPE_LOCAL        2
 
 //usage page
-#define USAGE_PAGE_NONE    0x00
-#define USAGE_PAGE_BUTTON  0x09
+#define USAGE_PAGE_NONE     0x00
+#define USAGE_PAGE_KEYBOARD 0x07
+#define USAGE_PAGE_BUTTON   0x09
 //usage
 #define USAGE_NONE         0x00
 #define USAGE_X            0x30
@@ -106,21 +107,23 @@ typedef struct _HID_ITEM_INFO
 
 } HID_ITEM_INFO; 
 
-//mouse struct
-typedef struct _MOUSEDATA_STRUCT
+//hid segement define
+#define HID_SEG_KEYBOARD_INDEX  0x00
+
+#define HID_SEG_BUTTON_INDEX    0x00
+#define HID_SEG_X_INDEX         0x01
+#define HID_SEG_Y_INDEX         0x02
+#define HID_SEG_WHEEL_INDEX     0x03
+
+//hid seg struct
+typedef struct _HID_SEG_STRUCT
 {
-	UINT8  buttonStart; //bit offset of button data
-	UINT8  buttonSize;  //bit size of button data
-	
-	UINT8  xStart;		//bit offset of x data
-	UINT8  xSize;       //bit size of x data
-	
-	UINT8  yStart;		//bit offset of y data
-	UINT8  ySize;       //bit size of y data
-	
-	UINT8  wheelStart;	//bit offset of wheel data
-	UINT8  wheelSize;   //bit size of wheel data
-} MOUSEDATA_STRUCT;
+    struct
+    {
+        UINT8 segStart;
+        UINT8 segSize;
+    } HIDSeg[4];
+} HID_SEG_STRUCT;
 
 //interface struct
 typedef struct _INTERFACE
@@ -131,7 +134,7 @@ typedef struct _INTERFACE
 	UINT8     EndpointNum;   //number of endpoints in this interface
 	ENDPOINT  Endpoint[MAX_ENDPOINT_NUM]; //endpoints
 	
-	MOUSEDATA_STRUCT  MouseDataStruct;	
+	HID_SEG_STRUCT  HidSegStruct;	
 } INTERFACE, *PINTERFACE;
 
 //device struct
