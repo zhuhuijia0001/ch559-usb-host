@@ -11,6 +11,8 @@ int main()
 
 		ProcessPs2Port();
 
+        ProcessIpPs2Port();
+        
 		ProcessKeyboardLed();
 	}
 	

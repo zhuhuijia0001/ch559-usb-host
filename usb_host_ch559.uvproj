@@ -397,11 +397,6 @@
               <FilePath>.\UsbHost.c</FilePath>
             </File>
             <File>
-              <FileName>ParseMouseData.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ParseMouseData.c</FilePath>
-            </File>
-            <File>
               <FileName>CH559.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\CH559.c</FilePath>
@@ -420,6 +415,11 @@
               <FileName>KeyboardLed.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\KeyboardLed.c</FilePath>
+            </File>
+            <File>
+              <FileName>ParseHidData.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ParseHidData.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -507,11 +507,6 @@
               <FilePath>.\UsbHost.h</FilePath>
             </File>
             <File>
-              <FileName>ParseMouseData.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\ParseMouseData.h</FilePath>
-            </File>
-            <File>
               <FileName>Ps2Keyboard.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Ps2Keyboard.h</FilePath>
@@ -530,6 +525,11 @@
               <FileName>ProcessPs2Data.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\ProcessPs2Data.h</FilePath>
+            </File>
+            <File>
+              <FileName>ParseHidData.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\ParseHidData.h</FilePath>
             </File>
           </Files>
         </Group>

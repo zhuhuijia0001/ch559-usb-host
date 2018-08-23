@@ -23,6 +23,8 @@
 
 #define GET_GPIO_BIT(bit)          (bit)
 
+#define GET_P4_GPIO_BIT(bit)       ((P4_IN >> bit) & 0x01)
+
 #define SET_GPIO_INPUT(bit)        (DIR_##bit## &= ~(1 << OFFSET_##bit##))
 #define SET_GPIO_OUTPUT(bit)       (DIR_##bit## |= (1 << OFFSET_##bit##))
 

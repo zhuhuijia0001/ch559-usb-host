@@ -24,7 +24,7 @@ static USB_HUB_PORT xdata RootHubPort[ROOT_HUB_PORT_NUM];
 //sub hub port
 static USB_HUB_PORT xdata SubHubPort[MAX_EXHUB_PORT_NUM * ROOT_HUB_PORT_NUM];
 
-static void InitHubPortData(USB_HUB_PORT *pUsbHubPort)
+static void InitHubPortData(USB_HUB_PORT *const pUsbHubPort)
 {
 	int i, j;
 	
@@ -358,7 +358,7 @@ static UINT8 USBHostTransact(UINT8 endp_pid, UINT8 tog, UINT16 timeout)
     return( ERR_USB_TRANSFER );                                  // Ó¦´ð³¬Ê±
 }
 
-static UINT8 HostCtrlTransfer(const USB_SETUP_REQ *pSetupReq, UINT8 MaxPacketSize0, PUINT8 DataBuf, PUINT16 RetLen )  
+static UINT8 HostCtrlTransfer(const USB_SETUP_REQ *const pSetupReq, UINT8 MaxPacketSize0, PUINT8 DataBuf, PUINT16 RetLen )  
 {
     UINT16  RemLen  = 0;
     UINT8   s, RxLen, RxCnt, TxCnt;
@@ -770,7 +770,7 @@ static UINT8 HIDDataTransferReceive(USB_DEVICE *const pUsbDevice)
 	return(s);
 }
 
-static BOOL ParseDeviceDescriptor(const USB_DEV_DESCR *pDevDescr, UINT8 len, USB_DEVICE *pUsbDevice)
+static BOOL ParseDeviceDescriptor(const USB_DEV_DESCR *const pDevDescr, UINT8 len, USB_DEVICE *const pUsbDevice)
 {
 	if (len > sizeof(USB_DEV_DESCR))
 	{
@@ -791,7 +791,7 @@ static BOOL ParseDeviceDescriptor(const USB_DEV_DESCR *pDevDescr, UINT8 len, USB
 }
 
 
-static BOOL ParseConfigDescriptor(const USB_CFG_DESCR *pCfgDescr, UINT16 len, USB_DEVICE *pUsbDevice)
+static BOOL ParseConfigDescriptor(const USB_CFG_DESCR *const pCfgDescr, UINT16 len, USB_DEVICE *const pUsbDevice)
 {
 	int index;
 
@@ -930,7 +930,6 @@ static UINT8 ParseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG
                     //ÊÇ¼üÅÌ
                     dat = *(p + 1);
 
-                    
                     if (pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize == 0)
                     {
                         pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segStart = startBit;
@@ -1095,7 +1094,7 @@ static UINT8 ParseMouseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HI
 }
 
 //enum device
-static BOOL EnumerateHubPort(USB_HUB_PORT *pUsbHubPort, UINT8 addr)
+static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 {
 	UINT8 i, s;
 	UINT16 len;
@@ -1694,7 +1693,7 @@ void InterruptProcessRootHubPort(UINT8 port)
 	}
 }
 
-static void UpdateUsbKeyboardLedInternal(USB_DEVICE *pUsbDevice, UINT8 led)
+static void UpdateUsbKeyboardLedInternal(USB_DEVICE *const pUsbDevice, UINT8 led)
 {
 	UINT8 i;
 	for (i = 0; i < pUsbDevice->InterfaceNum; i++)

@@ -311,6 +311,15 @@ sfr P3_DIR          = 0xBE;         // port 3 direction
 #define bRXD              0x01      // RXD input for UART0
 sfr P3_PU           = 0xBF;         // port 3 pullup enable
 sfr P4_OUT          = 0xC0;         // port 4 output
+ sbit P4_0          = P4_OUT^0;
+ sbit P4_1          = P4_OUT^1;
+ sbit P4_2          = P4_OUT^2;
+ sbit P4_3          = P4_OUT^3;
+ sbit P4_4          = P4_OUT^4;
+ sbit P4_5          = P4_OUT^5;
+ sbit P4_6          = P4_OUT^6;
+ sbit P4_7          = P4_OUT^7;
+ 
  sbit SCK_          = P4_OUT^7;     // alternate pin for SCK
  sbit SCS_          = P4_OUT^6;     // alternate pin for SCS
  sbit PWM2_         = P4_OUT^5;     // alternate pin for PWM2

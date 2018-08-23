@@ -8,6 +8,8 @@ extern void ProcessUsbHostPort(void);
 
 extern void ProcessPs2Port(void);
 
+extern void ProcessIpPs2Port(void);
+
 extern void ProcessKeyboardLed(void);
 
 #endif

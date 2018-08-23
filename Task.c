@@ -18,6 +18,9 @@
 #include "Ps2Keyboard.h"
 #include "Ps2Mouse.h"
 
+#include "IpPs2Keyboard.h"
+#include "IpPs2Mouse.h"
+
 #include "Packet.h"
 
 #include "Task.h"
@@ -93,9 +96,15 @@ static void InitPs2Port(void)
 
 	CH559GPIOModeSelt(PORT_PIN_MS_CLK, 3, OFFSET_PIN_MS_CLK);
 	CH559GPIOModeSelt(PORT_PIN_MS_DAT, 3, OFFSET_PIN_MS_DAT);
+
+    //for ip ps2 pins 
+	CH559P4Mode();
 	
     DisablePs2MousePort();
 	DisablePs2KeyboardPort();
+
+	DisableIpPs2MousePort();
+	DisableIpPs2KeyboardPort();
 }
 
 static void InitTimer2(void)
@@ -240,6 +249,92 @@ void ProcessPs2Port()
 	}
 }
 
+void ProcessIpPs2Port()
+{
+	UINT8 res;
+	UINT8 buffer[KEYBOARD_LEN];
+	
+	res = TransceiveIpPs2KeyboardPort(buffer);
+	DisableIpPs2KeyboardPort();
+
+	if (res == IP_PS2_KB_AA)
+	{
+		UINT8 led = GetKeyboardLedStatus();
+
+		SetIpPs2KeyboardLed(led);
+		DisableIpPs2KeyboardPort();
+	}
+	else if (res == IP_PS2_KB_VALID_DATA)
+	{
+	    UINT8 output[KEYBOARD_LEN + 2];
+
+	    UINT8 pktLen;
+	    
+#ifdef DEBUG
+        UINT16 i;
+        
+		for (i = 0; i < KEYBOARD_LEN; i++)
+		{
+			TRACE1("0x%x ", buffer[i]);
+		}
+		TRACE("\r\n");
+#endif
+		if (BuildPs2KeyboardPacket(output, sizeof(output), &pktLen, buffer))
+		{
+			if (pktLen == KEYBOARD_LEN + 2)
+			{
+				CH559UART0SendData(output, pktLen);
+			}
+		}
+	}
+	else if (res == IP_PS2_KB_INVALID_DATA)
+	{
+		TRACE("invalid kb data\r\n");
+	}
+
+	res = TransceiveIpPs2MousePort(buffer);
+	DisableIpPs2MousePort();
+	
+	if (res == IP_PS2_MS_AA)
+	{
+		BOOL res = InitIpPs2Mouse();
+		DisableIpPs2MousePort();
+		if (res)
+		{
+			TRACE("mouse init ok\r\n");
+		}
+		else
+		{
+			TRACE("mouse init failed\r\n");
+		}
+	}
+	else if (res == IP_PS2_MS_VALID_DATA)
+	{
+	    UINT8 output[MOUSE_LEN + 2];
+		UINT8 pktLen;
+		
+#ifdef DEBUG
+        UINT16 i;
+		for (i = 0; i < MOUSE_LEN; i++)
+		{
+			TRACE1("0x%x ", buffer[i]);
+		}
+		TRACE("\r\n");
+#endif
+        if (BuildPs2MousePacket(output, sizeof(output), &pktLen, buffer))
+		{
+			if (pktLen == MOUSE_LEN + 2)
+			{
+				CH559UART0SendData(output, pktLen);
+			}
+		}
+	}
+	else if (res == IP_PS2_KB_INVALID_DATA)
+	{
+		TRACE("invalid ms data\r\n");
+	}
+}
+
 void ProcessKeyboardLed()
 {
 	if (!IsRecvBufferEmpty())
@@ -258,7 +353,10 @@ void ProcessKeyboardLed()
 				{
 					SetPs2KeyboardLed(led);
 					DisablePs2KeyboardPort();
-		
+
+		            SetIpPs2KeyboardLed(led);
+					DisableIpPs2KeyboardPort();
+					
 					UpdateUsbKeyboardLed(led);
 
 					SetKeyboardLedStatus(led);
