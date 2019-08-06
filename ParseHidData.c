@@ -1,24 +1,107 @@
 #include "Type.h"
 
+#include "Protocol.h"
 #include "UsbHost.h"
 #include "ParseHidData.h"
+
+#include "Trace.h"
+
+static UINT8C lowest_bit_bitmap[] =
+{
+    /* 00 */ 0, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 10 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 20 */ 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 30 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 40 */ 6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 50 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 60 */ 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 70 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 80 */ 7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* 90 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* A0 */ 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* B0 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* C0 */ 6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* D0 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* E0 */ 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    /* F0 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0
+};
+
+static BOOL NewUsbKeyboardParse(const UINT8 *pUsb, UINT8 len, UINT8 *pOut, UINT8 maxOut)
+{  
+	UINT8 i;
+
+	UINT8 offset = 0;
+
+	UINT8 outputIndex = 0;
+
+	for (i = 0; i < len; i++) 
+	{
+		UINT8 d = *pUsb++;
+
+		while (d)
+		{
+			UINT8 lowestBit = lowest_bit_bitmap[d];
+
+			d &= ~(1u << lowestBit);
+
+			if (outputIndex < maxOut)
+			{
+				pOut[outputIndex++] = offset + lowestBit;
+			}
+			else 
+			{
+				return FALSE;
+			}
+		}
+
+		offset += 8;
+	}
+
+	while (outputIndex < maxOut)
+	{
+		pOut[outputIndex++] = 0x00;
+	}
+	
+	return TRUE;
+}
 
 BOOL UsbKeyboardParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pKeyboardSegStruct)
 {
     UINT8 i;
     
-    if (pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_INDEX].segStart == 0xff)
+    if (pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].start == 0xff)
     {
         return FALSE;
     }
 
     if (pOut != NULL)
     {
-        pUsb += pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_INDEX].segStart / 8;
-        
-        for (i = 0; i < 8; i++)
+        UINT8 index = pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].start / 8;
+        pOut[0] = pUsb[index];
+        pOut[1] = 0x00;
+
+        index = pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_VAL_INDEX].start / 8;
+        if (pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_VAL_INDEX].size > 1)
         {
-            *pOut++ = *pUsb++;
+			for (i = 0; i < 6; i++)
+	        {
+	            *pOut++ = *pUsb++;
+	        }
+        }
+        else
+        {
+			//bit
+			if (NewUsbKeyboardParse(&pUsb[index], pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_VAL_INDEX].count / 8, &pOut[2], 6))
+			{
+#ifdef DEBUG
+				TRACE("converted data:\r\n");
+			    for (i = 0; i < 8; i++)
+			    {
+			        TRACE1("0x%02X ", (UINT16)pOut[i]);
+			    }
+			    TRACE("\r\n");
+#endif
+			}
         }
     }
 
@@ -61,7 +144,7 @@ BOOL UsbMouseParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pMouseS
 	UINT8 size;
 	
 	//解析button位置
-	index = pMouseSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segStart;
+	index = pMouseSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].start;
 	if (index == 0xff)
 	{
 		pOut[0] = 0;
@@ -74,7 +157,7 @@ BOOL UsbMouseParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pMouseS
 	}
 		
 	//解析x，y位置
-	index = pMouseSegStruct->HIDSeg[HID_SEG_X_INDEX].segStart;
+	index = pMouseSegStruct->HIDSeg[HID_SEG_X_INDEX].start;
 	if (index == 0xff)
 	{
 		pOut[1] = 0;
@@ -84,7 +167,7 @@ BOOL UsbMouseParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pMouseS
 	{
 		index >>= 3;
 
-	    size = pMouseSegStruct->HIDSeg[HID_SEG_X_INDEX].segSize;
+	    size = pMouseSegStruct->HIDSeg[HID_SEG_X_INDEX].size;
 		if (size == 16)
 		{
 			datx = pUsb[index] | (pUsb[index + 1] << 8);
@@ -110,18 +193,18 @@ BOOL UsbMouseParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pMouseS
 	}
 	
 	//解析wheel位置
-	index = pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segStart;
+	index = pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].start;
 	if (index == 0xff)
 	{
 		pOut[3] = 0x00;
 	}
 	else
 	{
-		if (pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segSize > 0)
+		if (pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].size > 0)
 		{
-			pOut[3] = GetMouseFieldData(pUsb, pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segStart, pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segSize);
+			pOut[3] = GetMouseFieldData(pUsb, pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].start, pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].size);
 		
-			if (pOut[3] & (0x01 << (pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segSize - 1)))
+			if (pOut[3] & (0x01 << (pMouseSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].size - 1)))
 			{
 				pOut[3] = 0xff;
 			}

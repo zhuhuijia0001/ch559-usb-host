@@ -421,6 +421,21 @@
               <FileType>1</FileType>
               <FilePath>.\ParseHidData.c</FilePath>
             </File>
+            <File>
+              <FileName>IpPs2Keyboard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\IpPs2Keyboard.c</FilePath>
+            </File>
+            <File>
+              <FileName>IpPs2Mouse.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\IpPs2Mouse.c</FilePath>
+            </File>
+            <File>
+              <FileName>ParseDescriptor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ParseDescriptor.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -530,6 +545,11 @@
               <FileName>ParseHidData.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\ParseHidData.h</FilePath>
+            </File>
+            <File>
+              <FileName>ParseDescriptor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\ParseDescriptor.h</FilePath>
             </File>
           </Files>
         </Group>

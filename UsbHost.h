@@ -40,7 +40,7 @@
 //maximum number of interfaces per devicve
 #define MAX_INTERFACE_NUM      4
 //maximum number of endpoints per interface
-#define MAX_ENDPOINT_NUM       3
+#define MAX_ENDPOINT_NUM       4
 //maximum level of external hub
 #define MAX_EXHUB_LEVEL        1
 
@@ -60,70 +60,105 @@ typedef struct _ENDPOINT
 } ENDPOINT, *PENDPOINT;
 
 //hid report define
-#define TAG_USAGE         0x00
+#define HID_LOCAL_ITEM_TAG_USAGE         0x00
 
-#define TAG_USAGE_PAGE    0x00
-#define TAG_REPORT_SIZE   0x07
-#define TAG_REPORT_COUNT  0x09
-#define TAG_REPORT_ID     0x08
+#define HID_GLOBAL_ITEM_TAG_USAGE_PAGE       0x00
+#define HID_GLOBAL_ITEM_TAG_LOGICAL_MINIMUM  0x01
+#define HID_GLOBAL_ITEM_TAG_LOGICAL_MAXIMUM  0x02
+#define HID_GLOBAL_ITEM_TAG_PHYSICAL_MINIMUM 0x03
+#define HID_GLOBAL_ITEM_TAG_PHYSICAL_MAXIMUM 0x04
+#define HID_GLOBAL_ITEM_TAG_REPORT_SIZE      0x07
+#define HID_GLOBAL_ITEM_TAG_REPORT_ID        0x08
+#define HID_GLOBAL_ITEM_TAG_REPORT_COUNT     0x09
 
-#define TAG_INPUT         0x08
+#define HID_MAIN_ITEM_TAG_INPUT          0x08
 
 #define TYPE_MAIN         0
 #define TYPE_GLOBAL       1
 #define TYPE_LOCAL        2
 
+#define HID_ITEM_FORMAT_SHORT      0
+#define HID_ITEM_FORMAT_LONG       1
+
+#define HID_ITEM_TAG_LONG          15
+
 //usage page
-#define USAGE_PAGE_NONE     0x00
-#define USAGE_PAGE_KEYBOARD 0x07
-#define USAGE_PAGE_BUTTON   0x09
+#define USAGE_PAGE_NONE            0x00
+#define USAGE_PAGE_GENERIC_DESKTOP 0x01
+#define USAGE_PAGE_KEYBOARD        0x07
+#define USAGE_PAGE_BUTTON          0x09
+
 //usage
 #define USAGE_NONE         0x00
 #define USAGE_X            0x30
 #define USAGE_Y            0x31
 #define USAGE_WHEEL        0x38
 
-typedef struct _USAGE
-{
-	UINT8  usage[4];
-
-	UINT8  usageLen;
-} USAGE;
-
-//hid item
 typedef struct _HID_ITEM_INFO
 {
-   	union
-    {
-       struct 
-       {
-           UINT8             ItemSize :2;
-           UINT8             ItemType :2; 
-           UINT8             ItemTag  :4; 
-       } ItemVal;
-       
-       UINT8                 val;
-    } ItemDetails;
+	unsigned int format;
+	UINT8 size;
+	UINT8 type;
+	UINT8 tag;
 
-} HID_ITEM_INFO; 
+	union
+	{
+		UINT8  u8;
+		INT8   s8;
+		UINT16 u16;
+		INT16  s16;
+		UINT32 u32;
+		INT32  s32;
+
+		const UINT8 *longdata;
+	} value;
+	
+} HID_ITEM;
+
+typedef struct _HID_GLOBAL
+{
+	UINT32   usagePage;
+	INT32    logicalMinimum;
+	INT32    logicalMaximum;
+	INT32    physicalMinimum;
+	INT32    physicalMaximum;
+	UINT32   unitExponent;
+	UINT32   unit;
+	UINT32   reportID;
+	UINT32   reportSize;
+	UINT32   reportCount;
+} HID_GLOBAL;
 
 //hid segement define
-#define HID_SEG_KEYBOARD_INDEX  0x00
+#define HID_SEG_KEYBOARD_MODIFIER_INDEX  0
+#define HID_SEG_KEYBOARD_VAL_INDEX       1
 
-#define HID_SEG_BUTTON_INDEX    0x00
-#define HID_SEG_X_INDEX         0x01
-#define HID_SEG_Y_INDEX         0x02
-#define HID_SEG_WHEEL_INDEX     0x03
+#define HID_SEG_BUTTON_INDEX             2
+#define HID_SEG_X_INDEX                  3
+#define HID_SEG_Y_INDEX                  4
+#define HID_SEG_WHEEL_INDEX              5
+
+#define HID_SEG_NUM                      6
 
 //hid seg struct
 typedef struct _HID_SEG_STRUCT
 {
-    struct
-    {
-        UINT8 segStart;
-        UINT8 segSize;
-    } HIDSeg[4];
+	struct
+	{
+		UINT8 start;
+		UINT8 size;
+		UINT8 count;
+	} HIDSeg[HID_SEG_NUM];
 } HID_SEG_STRUCT;
+
+#define MAX_USAGE_NUM      10
+
+typedef struct _USAGE
+{
+	UINT32  usage;
+
+	UINT8  usageLen;
+}USAGE;
 
 //interface struct
 typedef struct _INTERFACE

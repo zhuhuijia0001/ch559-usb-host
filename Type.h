@@ -34,12 +34,24 @@ typedef bit                             BOOL;
 #ifndef UINT8
 typedef unsigned char                   UINT8;
 #endif
+#ifndef INT8
+typedef signed char                     INT8;
+#endif
+
 #ifndef UINT16
 typedef unsigned short                  UINT16;
 #endif
+#ifndef INT16
+typedef signed short                    INT16;
+#endif
+
 #ifndef UINT32
 typedef unsigned long                   UINT32;
 #endif
+#ifndef INT32
+typedef signed long                     INT32;
+#endif
+
 #ifndef UINT8D
 typedef unsigned char  data             UINT8D;
 #endif

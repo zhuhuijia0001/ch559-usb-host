@@ -14,7 +14,7 @@
 #ifdef USE_PLL
 	#define COUNT_FACTOR    4
 #else
-	#define COUNT_FACTOR    2
+	#define COUNT_FACTOR    3
 #endif
 
 void DisablePs2KeyboardPort()

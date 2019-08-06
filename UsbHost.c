@@ -6,16 +6,18 @@
 #include "UsbDef.h"
 #include "UsbHost.h"
 #include "UsbHid.h"
+#include "ParseDescriptor.h"
+
 #include "KeyboardLed.h"
 
 #include "Trace.h"
 
 #define WAIT_USB_TOUT_200US     800  // 等待USB中断超时时间200uS
 
-static UINT8X RxBuffer[ MAX_PACKET_SIZE ] _at_ 0x0000 ;  // IN, must even address
-static UINT8X TxBuffer[ MAX_PACKET_SIZE ] _at_ 0x0040 ;  // OUT, must even address
+static UINT8X RxBuffer[MAX_PACKET_SIZE] _at_ 0x0000 ;  // IN, must even address
+static UINT8X TxBuffer[MAX_PACKET_SIZE] _at_ 0x0040 ;  // OUT, must even address
 
-#define RECEIVE_BUFFER_LEN    200
+#define RECEIVE_BUFFER_LEN    512
 static UINT8X  ReceiveDataBuffer[RECEIVE_BUFFER_LEN];
 
 //root hub port
@@ -485,7 +487,7 @@ static void FillSetupReq(USB_SETUP_REQ *const pSetupReq, UINT8 type, UINT8 req, 
 }
 
 //-----------------------------------------------------------------------------------------
-static UINT8 GetDeviceDescr(UINT8 MaxPacketSize0, UINT8 *pDevDescr, UINT16 reqLen, UINT16 *pRetLen)		//get device describtion
+static UINT8 GetDeviceDescr(const USB_DEVICE *const pUsbDevice, UINT8 *pDevDescr, UINT16 reqLen, UINT16 *pRetLen)		//get device describtion
 {
 	UINT8	s;
 	UINT16 len;
@@ -494,7 +496,7 @@ static UINT8 GetDeviceDescr(UINT8 MaxPacketSize0, UINT8 *pDevDescr, UINT16 reqLe
 	FillSetupReq(&SetupReq, USB_REQ_TYP_IN | USB_REQ_TYP_STANDARD | USB_REQ_RECIP_DEVICE, 
 				USB_GET_DESCRIPTOR, USB_DESCR_TYP_DEVICE << 8, 0, reqLen);
 
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, pDevDescr, &len); 
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, pDevDescr, &len); 
 	
 	if (s == ERR_SUCCESS)
 	{
@@ -509,7 +511,7 @@ static UINT8 GetDeviceDescr(UINT8 MaxPacketSize0, UINT8 *pDevDescr, UINT16 reqLe
 
 
 //----------------------------------------------------------------------------------------
-static UINT8 GetConfigDescr(UINT8 MaxPacketSize0, UINT8 *pCfgDescr, UINT16 reqLen, UINT16 *pRetLen) 
+static UINT8 GetConfigDescr(const USB_DEVICE *const pUsbDevice, UINT8 *pCfgDescr, UINT16 reqLen, UINT16 *pRetLen) 
 {
 	UINT8	s;
 	UINT16  len;
@@ -517,7 +519,7 @@ static UINT8 GetConfigDescr(UINT8 MaxPacketSize0, UINT8 *pCfgDescr, UINT16 reqLe
 	USB_SETUP_REQ SetupReq;
 	FillSetupReq(&SetupReq, USB_REQ_TYP_IN | USB_REQ_TYP_STANDARD | USB_REQ_RECIP_DEVICE, 
 				USB_GET_DESCRIPTOR, USB_DESCR_TYP_CONFIG << 8, 0, reqLen);
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, pCfgDescr, &len);
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, pCfgDescr, &len);
 	if (s == ERR_SUCCESS) 
 	{
 		if (pRetLen != NULL)
@@ -531,7 +533,7 @@ static UINT8 GetConfigDescr(UINT8 MaxPacketSize0, UINT8 *pCfgDescr, UINT16 reqLe
 
 
 //-------------------------------------------------------------------------------------
-static UINT8 SetUsbAddress(UINT8 MaxPacketSize0, UINT8 addr)
+static UINT8 SetUsbAddress(const USB_DEVICE *const pUsbDevice, UINT8 addr)
 {
 	UINT8	s;
 	
@@ -539,7 +541,7 @@ static UINT8 SetUsbAddress(UINT8 MaxPacketSize0, UINT8 addr)
 	FillSetupReq(&SetupReq, USB_REQ_TYP_OUT | USB_REQ_TYP_STANDARD | USB_REQ_RECIP_DEVICE, 
 				USB_SET_ADDRESS, addr, 0, 0);
 	
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, NULL, NULL);			
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, NULL, NULL);			
 	if (s == ERR_SUCCESS)
 	{
 		SetHostUsbAddr(addr);
@@ -549,7 +551,7 @@ static UINT8 SetUsbAddress(UINT8 MaxPacketSize0, UINT8 addr)
 }
 
 //-------------------------------------------------------------------------------------
-static UINT8 SetUsbConfig(UINT8 MaxPacketSize0, UINT8 cfg) 
+static UINT8 SetUsbConfig(const USB_DEVICE *const pUsbDevice, UINT8 cfg) 
 {
 	UINT8	s;
 	
@@ -557,14 +559,14 @@ static UINT8 SetUsbConfig(UINT8 MaxPacketSize0, UINT8 cfg)
 	FillSetupReq(&SetupReq, USB_REQ_TYP_OUT | USB_REQ_TYP_STANDARD | USB_REQ_RECIP_DEVICE, 
 				USB_SET_CONFIGURATION, cfg, 0, 0);
 
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, NULL, NULL);			
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, NULL, NULL);			
 
 	return s;
 }
 
 
 //-----------------------------------------------------------------------------------------
-static UINT8 GetHubDescriptor(UINT8 MaxPacketSize0, UINT8 *pHubDescr, UINT16 reqLen, UINT16 *pRetLen)
+static UINT8 GetHubDescriptor(const USB_DEVICE *const pUsbDevice, UINT8 *pHubDescr, UINT16 reqLen, UINT16 *pRetLen)
 {
 	UINT8	s;
 	UINT16  len;
@@ -572,7 +574,7 @@ static UINT8 GetHubDescriptor(UINT8 MaxPacketSize0, UINT8 *pHubDescr, UINT16 req
 	USB_SETUP_REQ SetupReq;
 	FillSetupReq(&SetupReq, USB_REQ_TYP_IN | USB_REQ_TYP_CLASS | USB_REQ_RECIP_DEVICE, 
 				USB_GET_DESCRIPTOR, USB_DESCR_TYP_HUB << 8, 0, reqLen);
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, (UINT8 *)pHubDescr, &len);
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, (UINT8 *)pHubDescr, &len);
 	
 	if (s == ERR_SUCCESS) 
 	{	
@@ -587,7 +589,7 @@ static UINT8 GetHubDescriptor(UINT8 MaxPacketSize0, UINT8 *pHubDescr, UINT16 req
 
 
 //-----------------------------------------------------------------------------------------
-static UINT8 GetHubPortStatus(UINT8 MaxPacketSize0, UINT8 HubPort, UINT16 *pPortStatus, UINT16 *pPortChange)
+static UINT8 GetHubPortStatus(const USB_DEVICE *const pUsbDevice, UINT8 HubPort, UINT16 *pPortStatus, UINT16 *pPortChange)
 {
 	UINT8	s;
 	UINT16  len;
@@ -598,7 +600,7 @@ static UINT8 GetHubPortStatus(UINT8 MaxPacketSize0, UINT8 HubPort, UINT16 *pPort
 	FillSetupReq(&SetupReq, USB_REQ_TYP_IN | USB_REQ_TYP_CLASS | USB_REQ_RECIP_OTHER, 
 				USB_GET_STATUS, 0, HubPort, 4);
 				
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, Ret, &len);
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, Ret, &len);
 	if(s == ERR_SUCCESS)
 	{
 		if (pPortStatus != NULL)
@@ -617,7 +619,7 @@ static UINT8 GetHubPortStatus(UINT8 MaxPacketSize0, UINT8 HubPort, UINT16 *pPort
 
 
 //------------------------------------------------------------------------------------------
-static UINT8 SetHubPortFeature(UINT8 MaxPacketSize0, UINT8 HubPort, UINT8 selector)		//this function set feature for port						//this funciton set
+static UINT8 SetHubPortFeature(const USB_DEVICE *const pUsbDevice, UINT8 HubPort, UINT8 selector)		//this function set feature for port						//this funciton set
 {
 	UINT8	s;
 	
@@ -625,12 +627,12 @@ static UINT8 SetHubPortFeature(UINT8 MaxPacketSize0, UINT8 HubPort, UINT8 select
 	FillSetupReq(&SetupReq, USB_REQ_TYP_OUT | USB_REQ_TYP_CLASS | USB_REQ_RECIP_OTHER, 
 				USB_SET_FEATURE, selector, (0 << 8) | HubPort, 0);
 			
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, NULL, NULL);
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, NULL, NULL);
 
 	return s;
 }
 
-static UINT8 ClearHubPortFeature(UINT8 MaxPacketSize0, UINT8 HubPort, UINT8 selector)
+static UINT8 ClearHubPortFeature(const USB_DEVICE *const pUsbDevice, UINT8 HubPort, UINT8 selector)
 {
 	UINT8	s;
 	
@@ -638,14 +640,14 @@ static UINT8 ClearHubPortFeature(UINT8 MaxPacketSize0, UINT8 HubPort, UINT8 sele
 	FillSetupReq(&SetupReq, USB_REQ_TYP_OUT | USB_REQ_TYP_CLASS | USB_REQ_RECIP_OTHER, 
 				USB_CLEAR_FEATURE, selector, (0 << 8) | HubPort, 0);
 		
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, NULL, NULL);
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, NULL, NULL);
 
 	return s;
 }
 
 
 //-----------------------------------------------------------------------------------------
-static UINT8 GetReportDescriptor(UINT8 MaxPacketSize0, UINT8 interface, UINT8 *pReportDescr, UINT16 reqLen, UINT16 *pRetLen)
+static UINT8 GetReportDescriptor(const USB_DEVICE *const pUsbDevice, UINT8 interface, UINT8 *pReportDescr, UINT16 reqLen, UINT16 *pRetLen)
 {
 	UINT8	s;
 	UINT16  len;
@@ -654,7 +656,7 @@ static UINT8 GetReportDescriptor(UINT8 MaxPacketSize0, UINT8 interface, UINT8 *p
 	FillSetupReq(&SetupReq, USB_REQ_TYP_IN | USB_REQ_TYP_STANDARD| USB_REQ_RECIP_INTERF, 
 				USB_GET_DESCRIPTOR, USB_DESCR_TYP_REPORT << 8, interface, reqLen);
 	
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, pReportDescr, &len);
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, pReportDescr, &len);
 	
 	if (s == ERR_SUCCESS) 
 	{	
@@ -669,7 +671,7 @@ static UINT8 GetReportDescriptor(UINT8 MaxPacketSize0, UINT8 interface, UINT8 *p
 
 
 //-----------------------------------------------------------------------------------------
-static UINT8 SetIdle(UINT8 MaxPacketSize0, UINT16 durationMs, UINT8 reportID, UINT8 interface) 
+static UINT8 SetIdle(const USB_DEVICE *const pUsbDevice, UINT16 durationMs, UINT8 reportID, UINT8 interface) 
 {
 	UINT8 s;
 	
@@ -679,13 +681,13 @@ static UINT8 SetIdle(UINT8 MaxPacketSize0, UINT16 durationMs, UINT8 reportID, UI
 	FillSetupReq(&SetupReq, USB_REQ_TYP_OUT | USB_REQ_TYP_CLASS | USB_REQ_RECIP_INTERF, 
 				HID_SET_IDLE, (duration << 8) | reportID, interface, 0);
 
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0,  NULL, NULL);
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0,  NULL, NULL);
 	
 	return s;
 }
 
 //-----------------------------------------------------------------------------------------------
-static UINT8 SetReport(UINT8 MaxPacketSize0, UINT8 interface, UINT8 *pReport, UINT16 ReportLen)
+static UINT8 SetReport(const USB_DEVICE *const pUsbDevice, UINT8 interface, UINT8 *pReport, UINT16 ReportLen)
 {
 	UINT8	s;
 	UINT16  len;
@@ -694,7 +696,7 @@ static UINT8 SetReport(UINT8 MaxPacketSize0, UINT8 interface, UINT8 *pReport, UI
 	FillSetupReq(&SetupReq, USB_REQ_TYP_OUT | USB_REQ_TYP_CLASS | USB_REQ_RECIP_INTERF, 
 				HID_SET_REPORT, HID_REPORT_OUTPUT << 8, interface, ReportLen);
 
-	s = HostCtrlTransfer(&SetupReq, MaxPacketSize0, pReport, &len);			
+	s = HostCtrlTransfer(&SetupReq, pUsbDevice->MaxPacketSize0, pReport, &len);			
 
 	return s;
 }
@@ -711,12 +713,12 @@ void InitUsbData(void)
 	}
 }
 
-static UINT8 TransferReceive(UINT8 endpointAddr, BOOL tog, UINT8 *pData, UINT16 *pRetLen)
+static UINT8 TransferReceive(const ENDPOINT *const pEndPoint, UINT8 *pData, UINT16 *pRetLen)
 {
 	UINT8 s;
 	UINT8 len;
 
-	s = USBHostTransact(USB_PID_IN << 4 | (endpointAddr & 0x7F), tog ? bUH_R_TOG | bUH_T_TOG : 0, 0 );// CH559传输事务,获取数据,NAK不重试
+	s = USBHostTransact(USB_PID_IN << 4 | (pEndPoint->EndpointAddr & 0x7F), pEndPoint->TOG ? bUH_R_TOG | bUH_T_TOG : 0, 0 );// CH559传输事务,获取数据,NAK不重试
 	if (s == ERR_SUCCESS)
 	{
 		UINT8 i;
@@ -746,21 +748,23 @@ static UINT8 HIDDataTransferReceive(USB_DEVICE *const pUsbDevice)
 	interfaceNum = pUsbDevice->InterfaceNum;
 	for (i = 0; i < interfaceNum; i++)
 	{
-		if (pUsbDevice->Interface[i].InterfaceClass == USB_DEV_CLASS_HID)
+		INTERFACE *pInterface = &pUsbDevice->Interface[i];
+		if (pInterface->InterfaceClass == USB_DEV_CLASS_HID)
 		{ 
-			endpointNum = pUsbDevice->Interface[i].EndpointNum;
+			endpointNum = pInterface->EndpointNum;
 			for (j = 0; j < endpointNum; j++)
 			{
-				if (pUsbDevice->Interface[i].Endpoint[j].EndpointDir == ENDPOINT_IN)
+				ENDPOINT *pEndPoint = &pInterface->Endpoint[j];
+				if (pEndPoint->EndpointDir == ENDPOINT_IN)
 				{
-					s = TransferReceive(pUsbDevice->Interface[i].Endpoint[j].EndpointAddr, 
-										pUsbDevice->Interface[i].Endpoint[j].TOG,
-													ReceiveDataBuffer, &len);
+					s = TransferReceive(pEndPoint, ReceiveDataBuffer, &len);
 					if (s == ERR_SUCCESS)
 					{
-						pUsbDevice->Interface[i].Endpoint[j].TOG = pUsbDevice->Interface[i].Endpoint[j].TOG ? FALSE : TRUE;
-						
-						ProcessHIDData(&pUsbDevice->Interface[i], ReceiveDataBuffer, len);
+						pEndPoint->TOG = pEndPoint->TOG ? FALSE : TRUE;
+
+						TRACE1("interface %d data:", (UINT16)i);
+
+						ProcessHIDData(pInterface, ReceiveDataBuffer, len);
 					}
 				}
 			}
@@ -768,329 +772,6 @@ static UINT8 HIDDataTransferReceive(USB_DEVICE *const pUsbDevice)
 	}
 	
 	return(s);
-}
-
-static BOOL ParseDeviceDescriptor(const USB_DEV_DESCR *const pDevDescr, UINT8 len, USB_DEVICE *const pUsbDevice)
-{
-	if (len > sizeof(USB_DEV_DESCR))
-	{
-		return FALSE;
-	}
-	
-	pUsbDevice->MaxPacketSize0 = pDevDescr->bMaxPacketSize0;
-	pUsbDevice->DeviceClass = pDevDescr->bDeviceClass;
-
-	if (len == sizeof(USB_DEV_DESCR))
-	{
-		pUsbDevice->VendorID = pDevDescr->idVendorL | (pDevDescr->idVendorH << 8);
-		pUsbDevice->ProductID = pDevDescr->idProductL | (pDevDescr->idProductH << 8);
-		pUsbDevice->bcdDevice = pDevDescr->bcdDeviceL | (pDevDescr->bcdDeviceH << 8);
-	}
-	
-	return TRUE;
-}
-
-
-static BOOL ParseConfigDescriptor(const USB_CFG_DESCR *const pCfgDescr, UINT16 len, USB_DEVICE *const pUsbDevice)
-{
-	int index;
-
-	UINT8 *pDescr;
-	DESCR_HEADER *pDescrHeader;
-	USB_ITF_DESCR *pItfDescr;
-	USB_ENDP_DESCR *pEdpDescr;
-	UINT8 descrType;
-	int endpointIndex;
-
-	UINT16 totalLen = pCfgDescr->wTotalLengthL | (pCfgDescr->wTotalLengthH << 8);
-	if (totalLen > len)
-	{
-		totalLen = len;
-	}
-
-	pUsbDevice->InterfaceNum = pCfgDescr->bNumInterfaces;
-	if (pUsbDevice->InterfaceNum > MAX_INTERFACE_NUM)
-	{
-		pUsbDevice->InterfaceNum = MAX_INTERFACE_NUM;
-	}
-
-	pDescr = (UINT8 *)pCfgDescr;
-
-	pDescr += pCfgDescr->bLength;
-
-	index = pCfgDescr->bLength;
-
-
-	while (index < totalLen)
-	{
-		pDescrHeader = (DESCR_HEADER *)pDescr;
-		descrType = pDescrHeader->bDescriptorType;
-
-		if (descrType == USB_DESCR_TYP_INTERF)
-		{
-			//interface descriptor
-			pItfDescr = (USB_ITF_DESCR *)pDescr;
-			if (pItfDescr->bInterfaceNumber >= pUsbDevice->InterfaceNum)
-			{
-				break;
-			}
-			
-			if (pItfDescr->bAlternateSetting == 0)
-			{
-				pUsbDevice->Interface[pItfDescr->bInterfaceNumber].EndpointNum = 0;
-
-				pUsbDevice->Interface[pItfDescr->bInterfaceNumber].InterfaceClass = pItfDescr->bInterfaceClass;
-				pUsbDevice->Interface[pItfDescr->bInterfaceNumber].InterfaceProtocol = pItfDescr->bInterfaceProtocol;
-			}
-		}
-		else if (descrType == USB_DESCR_TYP_ENDP)
-		{
-			//endpoint descriptor
-			pEdpDescr = (USB_ENDP_DESCR *)pDescr;
-
-			if (pUsbDevice->Interface[pItfDescr->bInterfaceNumber].EndpointNum >= MAX_ENDPOINT_NUM)
-			{
-				goto ONE_FINISH;
-			}
-			
-			if (pItfDescr->bAlternateSetting == 0)
-			{
-				endpointIndex = pUsbDevice->Interface[pItfDescr->bInterfaceNumber].EndpointNum;
-				pUsbDevice->Interface[pItfDescr->bInterfaceNumber].EndpointNum++;
-				pUsbDevice->Interface[pItfDescr->bInterfaceNumber].Endpoint[endpointIndex].EndpointAddr = pEdpDescr->bEndpointAddress & 0x7f;
-				if (pEdpDescr->bEndpointAddress & 0x80)
-				{
-					pUsbDevice->Interface[pItfDescr->bInterfaceNumber].Endpoint[endpointIndex].EndpointDir = ENDPOINT_IN;
-				}
-				else
-				{
-					pUsbDevice->Interface[pItfDescr->bInterfaceNumber].Endpoint[endpointIndex].EndpointDir = ENDPOINT_OUT;
-				}
-
-				pUsbDevice->Interface[pItfDescr->bInterfaceNumber].Endpoint[endpointIndex].MaxPacketSize = pEdpDescr->wMaxPacketSizeL | (pEdpDescr->wMaxPacketSizeH << 8);
-			}	
-		}
-ONE_FINISH:		
-		pDescr += pDescrHeader->bDescLength;
-
-		index += pDescrHeader->bDescLength;
-	}
-
-	return TRUE;
-}
-
-static UINT8 ParseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT *const pHidSegStruct)
-{
-	UINT8 i, j;
-	
-	UINT8 dataSize;
-	UINT8 dat;
-	UINT8 startBit = 0;
-	UINT8 curUsagePage = USAGE_PAGE_NONE, curReportSize = 0, curReportCount = 0, curReportID = 0;
-	
-	USAGE arrUsage[5];
-	UINT8 usagePtr = 0;
-	
-	const UINT8 *p = pDescriptor;
-	HID_ITEM_INFO hid_item;
-	i = 0;
-	
-	while (i < len)
-	{
-		hid_item.ItemDetails.val = *p;
-		
-		dataSize = hid_item.ItemDetails.ItemVal.ItemSize;
-		if (dataSize == 3)
-		{
-			dataSize = 4;
-		}
-		
-		switch (hid_item.ItemDetails.ItemVal.ItemType)
-		{
-		case TYPE_MAIN:
-			if (hid_item.ItemDetails.ItemVal.ItemTag == TAG_INPUT)
-			{
-				//是输入数据
-				if (curUsagePage == USAGE_PAGE_BUTTON)
-				{
-					//是按键
-					dat = *(p + 1);
-
-					if (!(dat & 0x01))
-					{
-						//为变量
-						pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segStart = startBit;
-						pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize = curReportSize * curReportCount;
-					}
-					
-					startBit += curReportSize * curReportCount;
-				}
-				else if (curUsagePage == USAGE_PAGE_KEYBOARD)
-				{
-                    //是键盘
-                    dat = *(p + 1);
-
-                    if (pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize == 0)
-                    {
-                        pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segStart = startBit;
-                    }
-                    
-                    pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize += curReportSize * curReportCount;
-					
-					startBit += curReportSize * curReportCount;
-				}
-				else
-				{
-					if (usagePtr > 0)
-					{
-						//有usage
-						j = 0;
-						while (j < usagePtr)
-						{
-							if (arrUsage[j].usageLen == 1)
-							{
-								if (arrUsage[j].usage[0] == USAGE_X)
-								{
-									//是x
-									pHidSegStruct->HIDSeg[HID_SEG_X_INDEX].segStart = startBit;
-									pHidSegStruct->HIDSeg[HID_SEG_X_INDEX].segSize = curReportSize;
-									
-									startBit += curReportSize;
-								}
-								else if (arrUsage[j].usage[0] == USAGE_Y)
-								{
-									//是y
-									pHidSegStruct->HIDSeg[HID_SEG_Y_INDEX].segStart = startBit;
-									pHidSegStruct->HIDSeg[HID_SEG_Y_INDEX].segSize = curReportSize;
-                                    
-									startBit += curReportSize;
-								}
-								else if (arrUsage[j].usage[0] == USAGE_WHEEL)
-								{
-									//是滚轮
-									pHidSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segStart = startBit;
-									pHidSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segSize = curReportSize;
-                                    
-									startBit += curReportSize;
-								}
-								else
-								{
-									//其它page
-									if (usagePtr == 1)
-									{
-										//只有一个page
-										startBit += curReportSize * curReportCount;
-									}
-									else
-									{
-										//有多个page
-										startBit += curReportSize;
-									}
-								}
-							}
-							else
-							{
-								if (usagePtr == 1)
-								{
-									//只有一个page
-									startBit += curReportSize * curReportCount;
-								}
-								else
-								{
-									//有多个page
-									startBit += curReportSize;
-								}
-							}
-							
-							j++;
-						}					
-					}
-				}	
-			}
-			
-			usagePtr = 0;
-			
-			break;
-			
-		case TYPE_GLOBAL:
-			if (hid_item.ItemDetails.ItemVal.ItemTag == TAG_REPORT_ID)
-			{
-				//是report id
-				startBit += dataSize * 8;
-				
-				if (curReportID != 0)
-				{
-					//直接退出
-					i = len;
-				}
-
-				curReportID = *(p + 1);
-			}
-			else if (hid_item.ItemDetails.ItemVal.ItemTag == TAG_REPORT_SIZE)
-			{
-				//是report size
-				curReportSize = *(p + 1);
-			}
-			else if (hid_item.ItemDetails.ItemVal.ItemTag == TAG_REPORT_COUNT)
-			{
-				//是report count
-				curReportCount = *(p + 1);
-			}
-			else if (hid_item.ItemDetails.ItemVal.ItemTag == TAG_USAGE_PAGE)
-			{
-				//是usage page
-				curUsagePage = *(p + 1);
-			}
-			
-			break;
-			
-		case TYPE_LOCAL:
-			if (hid_item.ItemDetails.ItemVal.ItemTag == TAG_USAGE)
-			{
-				for (j = 0; j < dataSize; j++)
-				{
-					arrUsage[usagePtr].usage[j] = *(p + j + 1);
-				}			
-				arrUsage[usagePtr].usageLen = dataSize;
-
-				usagePtr++;
-			}
-			
-			break;
-			
-		}
-		
-		p += (dataSize + 1);
-		
-		i += (dataSize + 1);
-	}
-	
-	return TRUE;
-}
-
-static UINT8 ParseKeyboardReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT *const pHidSegStruct)
-{
-    pHidSegStruct->HIDSeg[HID_SEG_KEYBOARD_INDEX].segStart = 0xff;
-    pHidSegStruct->HIDSeg[HID_SEG_KEYBOARD_INDEX].segSize = 0;
-
-    return ParseReportDescriptor(pDescriptor, len, pHidSegStruct);
-}
-
-static UINT8 ParseMouseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT *const pHidSegStruct)
-{
-    pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segStart = 0xff;
-    pHidSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].segSize = 0;
-
-    pHidSegStruct->HIDSeg[HID_SEG_X_INDEX].segStart = 0xff;
-    pHidSegStruct->HIDSeg[HID_SEG_X_INDEX].segSize = 0;
-
-    pHidSegStruct->HIDSeg[HID_SEG_Y_INDEX].segStart = 0xff;
-    pHidSegStruct->HIDSeg[HID_SEG_Y_INDEX].segSize = 0;
-
-    pHidSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segStart = 0xff;
-    pHidSegStruct->HIDSeg[HID_SEG_WHEEL_INDEX].segSize = 0;
-    
-    return ParseReportDescriptor(pDescriptor, len, pHidSegStruct);
 }
 
 //enum device
@@ -1106,7 +787,7 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 	pUsbDevice = &pUsbHubPort->UsbDevice;
 	
 	//get first 8 bytes of device descriptor to get maxpacketsize0
-	s = GetDeviceDescr(pUsbDevice->MaxPacketSize0, ReceiveDataBuffer, 8, &len);
+	s = GetDeviceDescr(pUsbDevice, ReceiveDataBuffer, 8, &len);
 	
 	if (s != ERR_SUCCESS)
 	{
@@ -1119,22 +800,22 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 	TRACE1("len=%d\r\n", len);
 	
 	ParseDeviceDescriptor((USB_DEV_DESCR *)ReceiveDataBuffer, len, pUsbDevice);
-	pUsbDevice->DeviceAddress = addr;
 
 	TRACE1("MaxPacketSize0=%bd\r\n", pUsbDevice->MaxPacketSize0);
 
 	//set device address
-	s = SetUsbAddress(pUsbDevice->MaxPacketSize0, pUsbDevice->DeviceAddress);
+	s = SetUsbAddress(pUsbDevice, addr);
 	if (s != ERR_SUCCESS) 
 	{
 		return(FALSE);
 	}
-	
+
+	pUsbDevice->DeviceAddress = addr;
 	TRACE("SetUsbAddress OK\r\n");
 	TRACE1("address=%bd\r\n", pUsbDevice->DeviceAddress);
 	
 	//get full bytes of device descriptor
-	s = GetDeviceDescr(pUsbDevice->MaxPacketSize0, ReceiveDataBuffer, sizeof(USB_DEV_DESCR), &len);
+	s = GetDeviceDescr(pUsbDevice, ReceiveDataBuffer, sizeof(USB_DEV_DESCR), &len);
 	
 	if (s != ERR_SUCCESS)
 	{
@@ -1152,7 +833,7 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 	//get configure descriptor for the first time
 	cfgDescLen = sizeof(USB_CFG_DESCR);
 	TRACE1("GetConfigDescr with cfgDescLen=%d\r\n", cfgDescLen);
-	s = GetConfigDescr(pUsbDevice->MaxPacketSize0, ReceiveDataBuffer, cfgDescLen, &len);
+	s = GetConfigDescr(pUsbDevice, ReceiveDataBuffer, cfgDescLen, &len);
 	if (s != ERR_SUCCESS)
 	{
 		TRACE("GetConfigDescr 1 failed\r\n");
@@ -1169,7 +850,7 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 	}
 	TRACE1("GetConfigDescr with cfgDescLen=%d\r\n", cfgDescLen);
  
-	s = GetConfigDescr(pUsbDevice->MaxPacketSize0, ReceiveDataBuffer, cfgDescLen, &len);
+	s = GetConfigDescr(pUsbDevice, ReceiveDataBuffer, cfgDescLen, &len);
 	if (s != ERR_SUCCESS)
 	{
 		TRACE("GetConfigDescr 2 failed\r\n");
@@ -1184,7 +865,7 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 	TRACE1("len=%d\r\n", len);
 	
 	//set config	
-	s = SetUsbConfig(pUsbDevice->MaxPacketSize0, ((USB_CFG_DESCR *)ReceiveDataBuffer)->bConfigurationValue);
+	s = SetUsbConfig(pUsbDevice, ((USB_CFG_DESCR *)ReceiveDataBuffer)->bConfigurationValue);
 	if (s != ERR_SUCCESS)
 	{			
 		return(FALSE);
@@ -1202,30 +883,30 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 #ifdef DEBUG 
 			int j;
 #endif
-			UINT8 interfaceClass = pUsbDevice->Interface[i].InterfaceClass;
+			INTERFACE *pInterface = &pUsbDevice->Interface[i];
 
-			TRACE1("InterfaceClass=0x%x\r\n", (UINT16)pUsbDevice->Interface[i].InterfaceClass);
-			TRACE1("InterfaceProtocol=0x%x\r\n", (UINT16)pUsbDevice->Interface[i].InterfaceProtocol);
+			TRACE1("InterfaceClass=0x%02X\r\n", (UINT16)pInterface->InterfaceClass);
+			TRACE1("InterfaceProtocol=0x%02X\r\n", (UINT16)pInterface->InterfaceProtocol);
 
 #ifdef DEBUG
-			for (j = 0; j < pUsbDevice->Interface[i].EndpointNum; j++)
+			for (j = 0; j < pInterface->EndpointNum; j++)
 			{
-				if (pUsbDevice->Interface[i].Endpoint[j].EndpointDir == ENDPOINT_OUT)
+				if (pInterface->Endpoint[j].EndpointDir == ENDPOINT_OUT)
 				{
-					TRACE1("endpoint %bd out\r\n", pUsbDevice->Interface[i].Endpoint[j].EndpointAddr);
+					TRACE1("endpoint %bd out\r\n", pInterface->Endpoint[j].EndpointAddr);
 				}
 				else
 				{
-					TRACE1("endpoint %bd in\r\n", pUsbDevice->Interface[i].Endpoint[j].EndpointAddr);
+					TRACE1("endpoint %bd in\r\n", pInterface->Endpoint[j].EndpointAddr);
 				}
 
-				TRACE1("endpoint packet size=%d\r\n", pUsbDevice->Interface[i].Endpoint[j].MaxPacketSize);
+				TRACE1("endpoint packet size=%d\r\n", pInterface->Endpoint[j].MaxPacketSize);
 			}
 #endif
 
-			if (interfaceClass == USB_DEV_CLASS_HID)
+			if (pInterface->InterfaceClass == USB_DEV_CLASS_HID)
 			{	
-				s = SetIdle(pUsbDevice->MaxPacketSize0, 0, 0, i);
+				s = SetIdle(pUsbDevice, 0, 0, i);
 			
 				if (s != ERR_SUCCESS)
 				{						
@@ -1237,67 +918,80 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 				}
 	
 				TRACE1("Interface %bd:", i);
-				TRACE1("InterfaceProtocol:%bd\r\n", pUsbDevice->Interface[i].InterfaceProtocol);
-				if (pUsbDevice->Interface[i].InterfaceProtocol == HID_PROTOCOL_KEYBOARD)
+				TRACE1("InterfaceProtocol:%bd\r\n", pInterface->InterfaceProtocol);
+
+				s = GetReportDescriptor(pUsbDevice, i, ReceiveDataBuffer, sizeof(ReceiveDataBuffer), &len);
+							
+				if (s != ERR_SUCCESS)
+				{							
+					return FALSE;
+				}
+						
+				TRACE("GetReportDescriptor OK\r\n");
+				TRACE1("report descr len:%d\r\n", len);
+
+	#ifdef DEBUG
+				{
+					UINT16 k;
+					for (k = 0; k < len; k++)
+					{
+						TRACE1("0x%02X ", (UINT16)ReceiveDataBuffer[k]);
+					}
+					TRACE("\r\n");
+				}
+	#endif
+				ParseReportDescriptor(ReceiveDataBuffer, len, &pInterface->HidSegStruct);
+
+
+	#ifdef DEBUG
+				if (pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].size != 0)
+				{
+					//It is a keyboard
+
+					TRACE3("keyboardModifierStart=%bd,keyboardModifierSize=%bd,keyboardModifierCount=%bd\r\n", 
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].start,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].size,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].count);
+
+					TRACE3("keyboardValueStart=%bd,keyboardValueSize=%bd,keyboardValueCount=%bd\r\n", 
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_VAL_INDEX].start,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_VAL_INDEX].size,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_VAL_INDEX].count);
+				}
+				else if (pInterface->HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].size != 0)
+				{
+					//It is a mouse
+
+					TRACE3("buttonStart=%bd,buttonSize=%bd,buttonCount=%bd\r\n", 
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].start,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].size,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].count);
+        			    
+        			TRACE3("xStart=%bd,xSize=%bd,xCount=%bd\r\n", 
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_X_INDEX].start,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_X_INDEX].size,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_X_INDEX].count);
+        			    
+        			TRACE3("yStart=%bd,ySize=%bd,yCount=%bd\r\n", 
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_Y_INDEX].start,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_Y_INDEX].size,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_Y_INDEX].count);
+        			    
+        			TRACE3("wheelStart=%bd,wheelSize=%bd,wheelCount=%bd\r\n", 
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_WHEEL_INDEX].start,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_WHEEL_INDEX].size,
+        			    pInterface->HidSegStruct.HIDSeg[HID_SEG_WHEEL_INDEX].count);
+				}
+				
+	#endif
+		    
+				if (pInterface->InterfaceProtocol == HID_PROTOCOL_KEYBOARD)
 				{
 				    UINT8 led;
 				    
-				    s = GetReportDescriptor(pUsbDevice->MaxPacketSize0, i, ReceiveDataBuffer, sizeof(ReceiveDataBuffer), &len);
-							
-					if (s != ERR_SUCCESS)
-					{							
-						return FALSE;
-					}
-							
-					TRACE("GetKeyboardReportDescriptor OK\r\n");
-					TRACE1("report descr len:%d\r\n", len);
-					
-				    ParseKeyboardReportDescriptor(ReceiveDataBuffer, len, &pUsbDevice->Interface[i].HidSegStruct);
-
-				    TRACE2("keyboardStart=%bd,keyboardSize=%bd\r\n", 
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_INDEX].segStart,
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_INDEX].segSize);
-        			    
 					led = GetKeyboardLedStatus();
-					SetReport(pUsbDevice->MaxPacketSize0, i, &led, sizeof(led));	
+					SetReport(pUsbDevice, i, &led, sizeof(led));	
 					TRACE("SetReport\r\n");			
-				}
-				else if (pUsbDevice->Interface[i].InterfaceProtocol == HID_PROTOCOL_MOUSE)
-				{
-					s = GetReportDescriptor(pUsbDevice->MaxPacketSize0, i, ReceiveDataBuffer, sizeof(ReceiveDataBuffer), &len);
-							
-					if (s != ERR_SUCCESS)
-					{							
-						return FALSE;
-					}
-							
-					TRACE("GetMouseReportDescriptor OK\r\n");
-					TRACE1("report descr len:%d\r\n", len);
-
-		#ifdef DEBUG
-					{
-						UINT16 k;
-						for (k = 0; k < len; k++)
-						{
-							TRACE1("0x%02X ", (UINT16)ReceiveDataBuffer[k]);
-						}
-						TRACE("\r\n");
-					}
-		#endif
-		
-					ParseMouseReportDescriptor(ReceiveDataBuffer, len, &pUsbDevice->Interface[i].HidSegStruct);						
-        			TRACE2("buttonStart=%bd,buttonSize=%bd\r\n", 
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].segStart,
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].segSize);
-        			TRACE2("xStart=%bd,xSize=%bd\r\n", 
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_X_INDEX].segStart,
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_X_INDEX].segSize);
-        			TRACE2("yStart=%bd,ySize=%bd\r\n", 
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_Y_INDEX].segStart,
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_Y_INDEX].segSize);
-        			TRACE2("wheelStart=%bd,wheelSize=%bd\r\n", 
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_WHEEL_INDEX].segStart,
-        			    pUsbDevice->Interface[i].HidSegStruct.HIDSeg[HID_SEG_WHEEL_INDEX].segSize);
 				}
 			}		
 		}
@@ -1394,7 +1088,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 			USB_DEVICE *pUsbDevice = &RootHubPort[port].UsbDevice;
 			
 			//hub
-			s = GetHubDescriptor(pUsbDevice->MaxPacketSize0, ReceiveDataBuffer, sizeof(USB_HUB_DESCR), &len);
+			s = GetHubDescriptor(pUsbDevice, ReceiveDataBuffer, sizeof(USB_HUB_DESCR), &len);
 			if (s != ERR_SUCCESS)
 			{
 				DisableRootHubPort(port);
@@ -1421,7 +1115,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 			//supply power for each port
 			for (i = 0; i < hubPortNum; i++)						
 			{
-				s = SetHubPortFeature(pUsbDevice->MaxPacketSize0, i + 1, HUB_PORT_POWER);
+				s = SetHubPortFeature(pUsbDevice, i + 1, HUB_PORT_POWER);
 				if (s != ERR_SUCCESS)
 				{
 					TRACE1("SetHubPortFeature %d failed\r\n", (UINT16)i);
@@ -1436,7 +1130,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 
 			for (i = 0; i < hubPortNum; i++)
             {
-                s = ClearHubPortFeature(pUsbDevice->MaxPacketSize0, i + 1, HUB_C_PORT_CONNECTION );
+                s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_C_PORT_CONNECTION );
                 if ( s != ERR_SUCCESS )
                 {
                     TRACE1("ClearHubPortFeature %d failed\r\n", (UINT16)i);
@@ -1453,7 +1147,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 				
 				SelectHubPort(port, EXHUB_PORT_NONE);  //切换到hub地址
 				
-				s = GetHubPortStatus(pUsbDevice->MaxPacketSize0, i + 1, &hubPortStatus, &hubPortChange);
+				s = GetHubPortStatus(pUsbDevice, i + 1, &hubPortStatus, &hubPortChange);
 				if (s != ERR_SUCCESS)
 				{
 					SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
@@ -1470,7 +1164,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 
 					mDelaymS(100);
 					
-					s = SetHubPortFeature(pUsbDevice->MaxPacketSize0, i + 1, HUB_PORT_RESET);		//reset the port device
+					s = SetHubPortFeature(pUsbDevice, i + 1, HUB_PORT_RESET);		//reset the port device
 					if (s != ERR_SUCCESS)
 					{
 						SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
@@ -1480,7 +1174,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 		
 					do
 					{
-						s = GetHubPortStatus(pUsbDevice->MaxPacketSize0, i + 1, &hubPortStatus, &hubPortChange);
+						s = GetHubPortStatus(pUsbDevice, i + 1, &hubPortStatus, &hubPortChange);
 						if (s != ERR_SUCCESS)
 						{
 							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
@@ -1511,7 +1205,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 							
 						}
 						
-						s = ClearHubPortFeature(pUsbDevice->MaxPacketSize0, i + 1, HUB_PORT_RESET);
+						s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_PORT_RESET);
 						if (s != ERR_SUCCESS)
 						{
 							TRACE("ClearHubPortFeature failed\r\n");		
@@ -1521,7 +1215,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 							TRACE("ClearHubPortFeature OK\r\n");
 						}
 						
-						s = ClearHubPortFeature(pUsbDevice->MaxPacketSize0, i + 1, HUB_PORT_SUSPEND);
+						s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_PORT_SUSPEND);
 						if (s != ERR_SUCCESS)
 						{
 							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
@@ -1532,7 +1226,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 			
 						TRACE("ClearHubPortFeature OK\r\n");
 			
-						s = ClearHubPortFeature(pUsbDevice->MaxPacketSize0, i + 1, HUB_C_PORT_CONNECTION);
+						s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_C_PORT_CONNECTION);
 						if (s != ERR_SUCCESS)
 						{
 							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
@@ -1698,11 +1392,12 @@ static void UpdateUsbKeyboardLedInternal(USB_DEVICE *const pUsbDevice, UINT8 led
 	UINT8 i;
 	for (i = 0; i < pUsbDevice->InterfaceNum; i++)
 	{
-		if (pUsbDevice->Interface[i].InterfaceClass == USB_DEV_CLASS_HID)
+		INTERFACE *pInterface = &pUsbDevice->Interface[i];
+		if (pInterface->InterfaceClass == USB_DEV_CLASS_HID)
 		{
-			if (pUsbDevice->Interface[i].InterfaceProtocol == HID_PROTOCOL_KEYBOARD)
+			if (pInterface->InterfaceProtocol == HID_PROTOCOL_KEYBOARD)
 			{
-				SetReport(pUsbDevice->MaxPacketSize0, i, &led, 1);
+				SetReport(pUsbDevice, i, &led, 1);
 
 				TRACE1("led=0x%x\r\n", led);
 			}
