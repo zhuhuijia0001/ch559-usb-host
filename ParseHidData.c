@@ -26,54 +26,114 @@ static UINT8C lowest_bit_bitmap[] =
     /* F0 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0
 };
 
-static BOOL NewUsbKeyboardParse(const UINT8 *pUsb, UINT8 len, UINT8 *pOut, UINT8 maxOut)
+static BOOL NewUsbKeyboardParse(const UINT8 *pUsb, UINT8 len, KEYBOARD_PARSE_STRUCT *const pKeyboardParseStruct, 
+									UINT8 *pOut, UINT8 maxOut)
 {  
 	UINT8 i;
 
 	UINT8 offset = 0;
 
-	UINT8 outputIndex = 0;
-
+	if (maxOut < HID_KEYBOARD_VAL_LEN)
+	{
+		return FALSE;
+	}
+	
+	if (len > MAX_HID_KEYBOARD_BIT_VAL_LEN)
+	{
+		len = MAX_HID_KEYBOARD_BIT_VAL_LEN;
+	}
+	
 	for (i = 0; i < len; i++) 
 	{
-		UINT8 d = *pUsb++;
+		UINT8 d = pUsb[i] ^ pKeyboardParseStruct->KeyboardBitVal[i];
 
 		while (d)
 		{
 			UINT8 lowestBit = lowest_bit_bitmap[d];
-
-			d &= ~(1u << lowestBit);
-
-			if (outputIndex < maxOut)
+			UINT8 mask = 1u << lowestBit;
+			UINT8 key = offset + lowestBit;
+			UINT8 j;
+			
+			if (pUsb[i] & mask)
 			{
-				pOut[outputIndex++] = offset + lowestBit;
+				// make key
+				for (j = 0; j < HID_KEYBOARD_VAL_LEN; j++)
+				{
+					if (pKeyboardParseStruct->KeyboardVal[j] == 0x00)
+					{
+						pKeyboardParseStruct->KeyboardVal[j] = key;
+
+						break;
+					}
+				}
+
+				if (j >= HID_KEYBOARD_VAL_LEN)
+				{
+					return FALSE;
+				}
+
+				pKeyboardParseStruct->KeyboardBitVal[i] |= mask;
 			}
-			else 
+			else
 			{
-				return FALSE;
+				//break key
+				for (j = 0; j < HID_KEYBOARD_VAL_LEN; j++)
+				{
+					if (pKeyboardParseStruct->KeyboardVal[j] == key)
+					{
+						UINT8 k;
+						for (k = j + 1; k < HID_KEYBOARD_VAL_LEN && pKeyboardParseStruct->KeyboardVal[k] != 0x00; k++)
+						{
+							pKeyboardParseStruct->KeyboardVal[k - 1] = pKeyboardParseStruct->KeyboardVal[k];
+						}
+
+						pKeyboardParseStruct->KeyboardVal[k - 1] = 0x00;
+
+						break;
+					}
+				}
+
+				
+				if (j >= HID_KEYBOARD_VAL_LEN)
+				{
+					return FALSE;
+				}
+				
+				pKeyboardParseStruct->KeyboardBitVal[i] &= ~mask;
 			}
+			
+			d &= ~mask;
 		}
 
 		offset += 8;
 	}
 
-	while (outputIndex < maxOut)
+	for (i = 0; i < HID_KEYBOARD_VAL_LEN; i++)
 	{
-		pOut[outputIndex++] = 0x00;
+		pOut[i] = pKeyboardParseStruct->KeyboardVal[i];
 	}
 	
 	return TRUE;
 }
 
-BOOL UsbKeyboardParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pKeyboardSegStruct)
+BOOL UsbKeyboardParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pKeyboardSegStruct, KEYBOARD_PARSE_STRUCT *const pKeyboardParseStruct)
 {
     UINT8 i;
+
+    BOOL ret;
     
     if (pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].start == 0xff)
     {
         return FALSE;
     }
 
+	if (pKeyboardSegStruct->KeyboardReportId != 0 && pKeyboardSegStruct->KeyboardReportId != pUsb[0])
+	{
+		return FALSE;
+	}
+	
+	ret = TRUE;
+	
     if (pOut != NULL)
     {
         UINT8 index = pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].start / 8;
@@ -85,27 +145,21 @@ BOOL UsbKeyboardParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pKey
         {
 			for (i = 0; i < 6; i++)
 	        {
-	            *pOut++ = *pUsb++;
+	            pOut[2 + i] = pUsb[index + i];
 	        }
         }
         else
         {
 			//bit
-			if (NewUsbKeyboardParse(&pUsb[index], pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_VAL_INDEX].count / 8, &pOut[2], 6))
+			if (!NewUsbKeyboardParse(&pUsb[index], pKeyboardSegStruct->HIDSeg[HID_SEG_KEYBOARD_VAL_INDEX].count / 8, 
+					pKeyboardParseStruct, &pOut[2], 6))
 			{
-#ifdef DEBUG
-				TRACE("converted data:\r\n");
-			    for (i = 0; i < 8; i++)
-			    {
-			        TRACE1("0x%02X ", (UINT16)pOut[i]);
-			    }
-			    TRACE("\r\n");
-#endif
+				ret = FALSE;
 			}
         }
     }
 
-    return TRUE;
+    return ret;
 }
 
 static UINT8 GetMouseFieldData(const UINT8 *pData, UINT8 start, UINT8 size)
@@ -142,6 +196,11 @@ BOOL UsbMouseParse(const UINT8 *pUsb, UINT8 *pOut, const HID_SEG_STRUCT *pMouseS
 	UINT16 datx, daty;
 
 	UINT8 size;
+
+	if (pMouseSegStruct->MouseReportId != 0 && pMouseSegStruct->MouseReportId != pUsb[0])
+	{
+		return FALSE;
+	}
 	
 	//½âÎöbuttonÎ»ÖÃ
 	index = pMouseSegStruct->HIDSeg[HID_SEG_BUTTON_INDEX].start;

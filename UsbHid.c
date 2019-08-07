@@ -22,25 +22,25 @@ void ProcessHIDData(INTERFACE *pInterface, const UINT8 *pData, UINT16 len)
 	
 #ifdef DEBUG
 	UINT16 i;
-		
+	
     TRACE("hid data:\r\n");
     for (i = 0; i < len; i++)
     {
         TRACE1("0x%02X ", (UINT16)pData[i]);
     }
     TRACE("\r\n");
+	
 #endif
-    
+
 	len = len;
 
 	if (interfaceClass == USB_DEV_CLASS_HID)
 	{
-		if (pInterface->HidSegStruct[HID_SEG_KEYBOARD_MODIFIER_INDEX].HIDSeg.size != 0)
+		if (pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].size != 0)
 		{
 			//keyboard
 			UINT8 keyboardData[KEYBOARD_LEN];
-			
-            if (!UsbKeyboardParse(pData, keyboardData, &pInterface->HidSegStruct))
+            if (!UsbKeyboardParse(pData, keyboardData, &pInterface->HidSegStruct, &pInterface->KeyboardParseStruct))
             {
                 return;
             }
@@ -61,11 +61,10 @@ void ProcessHIDData(INTERFACE *pInterface, const UINT8 *pData, UINT16 len)
 #endif
 			}
 		}
-		else if (pInterface->HidSegStruct[HID_SEG_BUTTON_INDEX].HIDSeg.size != 0)
+		else if (pInterface->HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].size != 0)
 		{
 			//mouse
 			UINT8 mouseData[MOUSE_LEN];
-			
 			UsbMouseParse(pData, mouseData, &pInterface->HidSegStruct);
 						
 			if (BuildUsbMousePacket(buffer, sizeof(buffer), &pktLen, mouseData))

@@ -116,32 +116,22 @@ ONE_FINISH:
 #define LITTLE_EADIAN       0
 static UINT16  GetUnaligned16(const UINT8 *start)
 {
-#ifdef LITTLE_EADIAN
+#if LITTLE_EADIAN
 	return *(UINT16 *)start;
 #else
-	UINT16 dat = 0x0000;
-	dat |= *start++;
-	dat <<= 8;
-	dat |= *start;
-
+	UINT16 dat = (*start) | (*(start + 1) << 8);
+	
 	return dat;
 #endif
 }
 
 static UINT32  GetUnaligned32(const UINT8 *start)
 {
-#ifdef LITTLE_EADIAN
+#if LITTLE_EADIAN
 	return *(UINT32 *)start;
 #else
-	UINT32 dat = 0x00000000;
-	dat |= *start++;
-	dat <<= 8;
-	dat |= *start++;
-	dat <<= 8;
-	dat |= *start++;
-	dat <<= 8;
-	dat |= *start;
-
+	UINT32 dat = (*start) | (*(start + 1) << 8) | (*(start + 2) << 16) | (*(start + 3) << 24);
+	
 	return dat;
 #endif
 }
@@ -273,6 +263,9 @@ static void InitHidSeg(HID_SEG_STRUCT *const pHidSegStruct)
 		pHidSegStruct->HIDSeg[i].size = 0;
 		pHidSegStruct->HIDSeg[i].count = 0;
 	}
+
+	pHidSegStruct->KeyboardReportId = 0x00;
+	pHidSegStruct->MouseReportId = 0x00;
 }
 
 BOOL ParseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT *const pHidSegStruct)
@@ -308,6 +301,9 @@ BOOL ParseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT 
 				if (hidGlobal.usagePage == USAGE_PAGE_KEYBOARD)
 				{
 					//是按键
+
+					pHidSegStruct->KeyboardReportId = hidGlobal.reportID;
+					
 					if (pHidSegStruct->HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].size == 0)
 					{
 						pHidSegStruct->HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].start = startBit;
@@ -330,6 +326,8 @@ BOOL ParseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT 
 					//是按键
 					UINT32 dat = ItemUData(&item);
 
+					pHidSegStruct->MouseReportId = hidGlobal.reportID;
+					
 					if (!(dat & 0x01))
 					{
 						//为变量

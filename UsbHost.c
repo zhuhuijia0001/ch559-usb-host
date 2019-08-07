@@ -24,7 +24,7 @@ static UINT8X  ReceiveDataBuffer[RECEIVE_BUFFER_LEN];
 static USB_HUB_PORT xdata RootHubPort[ROOT_HUB_PORT_NUM];
 
 //sub hub port
-static USB_HUB_PORT xdata SubHubPort[MAX_EXHUB_PORT_NUM * ROOT_HUB_PORT_NUM];
+static USB_HUB_PORT xdata SubHubPort[ROOT_HUB_PORT_NUM][MAX_EXHUB_PORT_NUM];
 
 static void InitHubPortData(USB_HUB_PORT *const pUsbHubPort)
 {
@@ -44,10 +44,22 @@ static void InitHubPortData(USB_HUB_PORT *const pUsbHubPort)
 		
 	for (i = 0; i < MAX_INTERFACE_NUM; i++)
 	{
+		UINT8 k;
+		
 		pUsbHubPort->UsbDevice.Interface[i].InterfaceClass    = USB_DEV_CLASS_RESERVED;
 		pUsbHubPort->UsbDevice.Interface[i].InterfaceProtocol = USB_PROTOCOL_NONE;
 		pUsbHubPort->UsbDevice.Interface[i].EndpointNum       = 0;
-				
+
+		for (k = 0; k < sizeof(pUsbHubPort->UsbDevice.Interface[i].KeyboardParseStruct.KeyboardBitVal); k++)
+		{
+			pUsbHubPort->UsbDevice.Interface[i].KeyboardParseStruct.KeyboardBitVal[k] = 0x00;
+		}
+
+		for (k = 0; k < sizeof(pUsbHubPort->UsbDevice.Interface[i].KeyboardParseStruct.KeyboardVal); k++)
+		{
+			pUsbHubPort->UsbDevice.Interface[i].KeyboardParseStruct.KeyboardVal[k] = 0x00;
+		}
+		
 		for (j = 0; j < MAX_ENDPOINT_NUM; j++)
 		{
 			pUsbHubPort->UsbDevice.Interface[i].Endpoint[j].EndpointAddr  = 0;
@@ -69,7 +81,7 @@ static void InitRootHubPortData(UINT8 rootHubIndex)
 		
 	for (i = 0; i < MAX_EXHUB_PORT_NUM; i++)
 	{
-		InitHubPortData(&SubHubPort[rootHubIndex * MAX_EXHUB_PORT_NUM + i]);
+		InitHubPortData(&SubHubPort[rootHubIndex][i]);
 	}
 }
 
@@ -204,14 +216,14 @@ static void SelectHubPort(UINT8 RootHubIndex, UINT8 HubPortIndex)
 	}
 	else
 	{
-		USB_DEVICE *pUsbDevice = &SubHubPort[RootHubIndex * MAX_EXHUB_PORT_NUM + HubPortIndex].UsbDevice;		
+		USB_DEVICE *pUsbDevice = &SubHubPort[RootHubIndex][HubPortIndex].UsbDevice;		
 		SetHostUsbAddr(pUsbDevice->DeviceAddress);
 		if (pUsbDevice->DeviceSpeed == LOW_SPEED)
 		{
 			UH_SETUP |= bUH_PRE_PID_EN;
 		}
 
-		SetUsbSpeed(SubHubPort[RootHubIndex * MAX_EXHUB_PORT_NUM + HubPortIndex].UsbDevice.DeviceSpeed);
+		SetUsbSpeed(pUsbDevice->DeviceSpeed);
 	}
 }
 
@@ -948,6 +960,8 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 				{
 					//It is a keyboard
 
+					TRACE1("keyboard report id:%bd\r\n", pInterface->HidSegStruct.KeyboardReportId);
+					
 					TRACE3("keyboardModifierStart=%bd,keyboardModifierSize=%bd,keyboardModifierCount=%bd\r\n", 
         			    pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].start,
         			    pInterface->HidSegStruct.HIDSeg[HID_SEG_KEYBOARD_MODIFIER_INDEX].size,
@@ -962,6 +976,8 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 				{
 					//It is a mouse
 
+					TRACE1("mouse report id:%bd\r\n", pInterface->HidSegStruct.MouseReportId);
+					
 					TRACE3("buttonStart=%bd,buttonSize=%bd,buttonCount=%bd\r\n", 
         			    pInterface->HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].start,
         			    pInterface->HidSegStruct.HIDSeg[HID_SEG_BUTTON_INDEX].size,
@@ -1120,7 +1136,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 				{
 					TRACE1("SetHubPortFeature %d failed\r\n", (UINT16)i);
 					
-					SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
+					SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
 				
 					continue;	
 				}
@@ -1150,7 +1166,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 				s = GetHubPortStatus(pUsbDevice, i + 1, &hubPortStatus, &hubPortChange);
 				if (s != ERR_SUCCESS)
 				{
-					SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
+					SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
 		
 					return FALSE;
 				}
@@ -1167,7 +1183,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 					s = SetHubPortFeature(pUsbDevice, i + 1, HUB_PORT_RESET);		//reset the port device
 					if (s != ERR_SUCCESS)
 					{
-						SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
+						SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
 			
 						return FALSE;
 					}
@@ -1177,7 +1193,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 						s = GetHubPortStatus(pUsbDevice, i + 1, &hubPortStatus, &hubPortChange);
 						if (s != ERR_SUCCESS)
 						{
-							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
+							SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
 				
 							return FALSE;
 						}
@@ -1192,14 +1208,14 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 						if (hubPortStatus & 0x0200)				
 						{
 							//speed low
-							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].UsbDevice.DeviceSpeed = LOW_SPEED;	
+							SubHubPort[port][i].UsbDevice.DeviceSpeed = LOW_SPEED;	
 							
 							TRACE("low speed device\r\n");
 						}
 						else
 						{
 							//full speed device
-							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].UsbDevice.DeviceSpeed = FULL_SPEED;
+							SubHubPort[port][i].UsbDevice.DeviceSpeed = FULL_SPEED;
 								
 							TRACE("full speed device\r\n");
 							
@@ -1218,7 +1234,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 						s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_PORT_SUSPEND);
 						if (s != ERR_SUCCESS)
 						{
-							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
+							SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
 							TRACE("ClearHubPortFeature failed\r\n");
 				
 							return FALSE;			
@@ -1229,7 +1245,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 						s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_C_PORT_CONNECTION);
 						if (s != ERR_SUCCESS)
 						{
-							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
+							SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
 							TRACE("ClearHubPortFeature failed\r\n");
 				
 							return FALSE;			
@@ -1242,15 +1258,15 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 						SelectHubPort(port, i);
 
 						addr = AssignUniqueAddress(port, i);
-						if (EnumerateHubPort(&SubHubPort[MAX_EXHUB_PORT_NUM * port + i], addr))
+						if (EnumerateHubPort(&SubHubPort[port][i], addr))
 						{
 							TRACE("EnumerateHubPort success\r\n");
-							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_SUCCESS;
+							SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_SUCCESS;
 						}
 						else
 						{
 							TRACE("EnumerateHubPort failed\r\n");
-							SubHubPort[MAX_EXHUB_PORT_NUM * port + i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
+							SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
 						}	
 					}	
 				}
@@ -1373,7 +1389,7 @@ void InterruptProcessRootHubPort(UINT8 port)
 
 			for (i = 0; i < exHubPortNum; i++)
 			{
-				pUsbHubPort = &SubHubPort[port * MAX_EXHUB_PORT_NUM + i];
+				pUsbHubPort = &SubHubPort[port][i];
 				
 				if (pUsbHubPort->HubPortStatus == PORT_DEVICE_ENUM_SUCCESS
 					&& pUsbHubPort->UsbDevice.DeviceClass != USB_DEV_CLASS_HUB)
@@ -1427,7 +1443,7 @@ void UpdateUsbKeyboardLed(UINT8 led)
 		
 				for (j = 0; j < exHubPortNum; j++)
 				{
-					pUsbHubPort = &SubHubPort[i * MAX_EXHUB_PORT_NUM + j];
+					pUsbHubPort = &SubHubPort[i][j];
 					
 					if (pUsbHubPort->HubPortStatus == PORT_DEVICE_ENUM_SUCCESS
 						&& pUsbHubPort->UsbDevice.DeviceClass != USB_DEV_CLASS_HUB)

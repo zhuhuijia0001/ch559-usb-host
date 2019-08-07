@@ -143,6 +143,9 @@ typedef struct _HID_GLOBAL
 //hid seg struct
 typedef struct _HID_SEG_STRUCT
 {
+	UINT8 KeyboardReportId;
+	UINT8 MouseReportId;
+	
 	struct
 	{
 		UINT8 start;
@@ -150,6 +153,16 @@ typedef struct _HID_SEG_STRUCT
 		UINT8 count;
 	} HIDSeg[HID_SEG_NUM];
 } HID_SEG_STRUCT;
+
+//keyboard parse struct
+#define HID_KEYBOARD_VAL_LEN           6
+#define MAX_HID_KEYBOARD_BIT_VAL_LEN   15
+
+typedef struct _KEYBOARD_PARSE_STRUCT
+{
+	UINT8     KeyboardVal[HID_KEYBOARD_VAL_LEN];
+	UINT8     KeyboardBitVal[MAX_HID_KEYBOARD_BIT_VAL_LEN]; //for bit value keyboard data
+} KEYBOARD_PARSE_STRUCT;
 
 #define MAX_USAGE_NUM      10
 
@@ -170,6 +183,8 @@ typedef struct _INTERFACE
 	ENDPOINT  Endpoint[MAX_ENDPOINT_NUM]; //endpoints
 	
 	HID_SEG_STRUCT  HidSegStruct;	
+
+	KEYBOARD_PARSE_STRUCT KeyboardParseStruct;
 } INTERFACE, *PINTERFACE;
 
 //device struct
