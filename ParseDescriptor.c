@@ -342,8 +342,6 @@ BOOL ParseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT 
 				{
 					if (usagePtr > 0)
 					{
-						UINT32 reportCount = hidGlobal.reportCount;
-						
 						//有usage
 						UINT8 i = 0;
 						while (i < usagePtr)
@@ -380,24 +378,33 @@ BOOL ParseReportDescriptor(const UINT8 *pDescriptor, UINT16 len, HID_SEG_STRUCT 
 								else
 								{
 									//其它page
-									startBit += hidGlobal.reportSize;
+									if (usagePtr == 1)
+									{
+										//只有一个page
+										startBit += hidGlobal.reportSize * hidGlobal.reportCount;
+									}
+									else
+									{
+										//有多个page
+										startBit += hidGlobal.reportSize;
+									}
 								}
 							}
 							else
 							{
-								startBit += hidGlobal.reportSize;
+								if (usagePtr == 1)
+								{
+									//只有一个page
+									startBit += hidGlobal.reportSize * hidGlobal.reportCount;
+								}
+								else
+								{
+									//有多个page
+									startBit += hidGlobal.reportSize;
+								}
 							}
 							
-							reportCount--;
-							
 							i++;
-						}
-						
-						while (reportCount > 0)
-						{
-							startBit += hidGlobal.reportSize;
-
-							reportCount--;
 						}
 					}
 				}	

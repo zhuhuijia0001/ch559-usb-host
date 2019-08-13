@@ -725,7 +725,7 @@ void InitUsbData(void)
 	}
 }
 
-static UINT8 TransferReceive(const ENDPOINT *const pEndPoint, UINT8 *pData, UINT16 *pRetLen)
+static UINT8 TransferReceive(ENDPOINT *const pEndPoint, UINT8 *pData, UINT16 *pRetLen)
 {
 	UINT8 s;
 	UINT8 len;
@@ -740,8 +740,13 @@ static UINT8 TransferReceive(const ENDPOINT *const pEndPoint, UINT8 *pData, UINT
 		{
 			*pData++ = RxBuffer[i];
 		}
+
+		if (pRetLen != NULL)
+		{
+			*pRetLen = len;
+		}
 		
-		*pRetLen = len;
+		pEndPoint->TOG = pEndPoint->TOG ? FALSE : TRUE;
 	}
 	
 	return(s);
@@ -772,8 +777,6 @@ static UINT8 HIDDataTransferReceive(USB_DEVICE *const pUsbDevice)
 					s = TransferReceive(pEndPoint, ReceiveDataBuffer, &len);
 					if (s == ERR_SUCCESS)
 					{
-						pEndPoint->TOG = pEndPoint->TOG ? FALSE : TRUE;
-
 						TRACE1("interface %d data:", (UINT16)i);
 
 						ProcessHIDData(pInterface, ReceiveDataBuffer, len);
@@ -795,7 +798,7 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 	
 	USB_DEVICE *pUsbDevice;
 	USB_CFG_DESCR *pCfgDescr;
-	
+
 	pUsbDevice = &pUsbHubPort->UsbDevice;
 	
 	//get first 8 bytes of device descriptor to get maxpacketsize0
@@ -807,7 +810,6 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 		
 		return(FALSE);
 	}
-	
 	TRACE("GetDeviceDescr OK\r\n");
 	TRACE1("len=%d\r\n", len);
 	
