@@ -17,7 +17,7 @@
 static UINT8X RxBuffer[MAX_PACKET_SIZE] _at_ 0x0000 ;  // IN, must even address
 static UINT8X TxBuffer[MAX_PACKET_SIZE] _at_ 0x0040 ;  // OUT, must even address
 
-#define RECEIVE_BUFFER_LEN    512
+#define RECEIVE_BUFFER_LEN    500
 static UINT8X  ReceiveDataBuffer[RECEIVE_BUFFER_LEN];
 
 //root hub port
@@ -1011,6 +1011,7 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 					SetReport(pUsbDevice, i, &led, sizeof(led));	
 					TRACE("SetReport\r\n");			
 				}
+
 			}		
 		}
 	}
