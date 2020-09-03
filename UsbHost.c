@@ -17,7 +17,7 @@
 static UINT8X RxBuffer[MAX_PACKET_SIZE] _at_ 0x0000 ;  // IN, must even address
 static UINT8X TxBuffer[MAX_PACKET_SIZE] _at_ 0x0040 ;  // OUT, must even address
 
-#define RECEIVE_BUFFER_LEN    500
+#define RECEIVE_BUFFER_LEN    512
 static UINT8X  ReceiveDataBuffer[RECEIVE_BUFFER_LEN];
 
 //root hub port
@@ -48,6 +48,8 @@ static void InitHubPortData(USB_HUB_PORT *const pUsbHubPort)
 		
 		pUsbHubPort->UsbDevice.Interface[i].InterfaceClass    = USB_DEV_CLASS_RESERVED;
 		pUsbHubPort->UsbDevice.Interface[i].InterfaceProtocol = USB_PROTOCOL_NONE;
+		pUsbHubPort->UsbDevice.Interface[i].ReportSize        = 0;
+		
 		pUsbHubPort->UsbDevice.Interface[i].EndpointNum       = 0;
 
 		for (k = 0; k < sizeof(pUsbHubPort->UsbDevice.Interface[i].KeyboardParseStruct.KeyboardBitVal); k++)
@@ -934,7 +936,8 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 				TRACE1("Interface %bd:", i);
 				TRACE1("InterfaceProtocol:%bd\r\n", pInterface->InterfaceProtocol);
 
-				s = GetReportDescriptor(pUsbDevice, i, ReceiveDataBuffer, sizeof(ReceiveDataBuffer), &len);
+				TRACE1("Report Size:%d\r\n", pInterface->ReportSize);
+				s = GetReportDescriptor(pUsbDevice, i, ReceiveDataBuffer, pInterface->ReportSize <= sizeof(ReceiveDataBuffer) ? pInterface->ReportSize : sizeof(ReceiveDataBuffer), &len);
 							
 				if (s != ERR_SUCCESS)
 				{							
@@ -942,7 +945,7 @@ static BOOL EnumerateHubPort(USB_HUB_PORT *const pUsbHubPort, UINT8 addr)
 				}
 						
 				TRACE("GetReportDescriptor OK\r\n");
-				TRACE1("report descr len:%d\r\n", len);
+				TRACE1("get report descr len:%d\r\n", len);
 
 	#ifdef DEBUG
 				{

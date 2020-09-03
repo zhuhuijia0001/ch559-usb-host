@@ -293,10 +293,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>16</ColumnNumber>
+      <ColumnNumber>18</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>959</TopLine>
-      <CurrentLine>977</CurrentLine>
+      <TopLine>925</TopLine>
+      <CurrentLine>925</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\UsbHost.c</PathWithFileName>
       <FilenameWithoutPath>UsbHost.c</FilenameWithoutPath>
@@ -2081,9 +2081,9 @@
         </Doc>
         <Doc>
           <Name>.\UsbHost.c</Name>
-          <ColumnNumber>16</ColumnNumber>
-          <TopLine>959</TopLine>
-          <CurrentLine>977</CurrentLine>
+          <ColumnNumber>18</ColumnNumber>
+          <TopLine>925</TopLine>
+          <CurrentLine>925</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>

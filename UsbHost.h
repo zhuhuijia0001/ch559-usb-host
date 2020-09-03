@@ -178,6 +178,8 @@ typedef struct _INTERFACE
 {
 	UINT8     InterfaceClass;
 	UINT8     InterfaceProtocol;
+
+	UINT16    ReportSize;
 	
 	UINT8     EndpointNum;   //number of endpoints in this interface
 	ENDPOINT  Endpoint[MAX_ENDPOINT_NUM]; //endpoints

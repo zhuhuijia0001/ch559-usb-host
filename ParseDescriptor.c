@@ -32,7 +32,9 @@ BOOL ParseConfigDescriptor(const USB_CFG_DESCR *const pCfgDescr, UINT16 len, USB
 	UINT8 *pDescr;
 	DESCR_HEADER *pDescrHeader;
 	USB_ITF_DESCR *pItfDescr;
+	USB_HID_DESCR *pHidDescr;
 	USB_ENDP_DESCR *pEdpDescr;
+	
 	UINT8 descrType;
 	int endpointIndex;
 
@@ -77,6 +79,12 @@ BOOL ParseConfigDescriptor(const USB_CFG_DESCR *const pCfgDescr, UINT16 len, USB
 				pUsbDevice->Interface[pItfDescr->bInterfaceNumber].InterfaceProtocol = pItfDescr->bInterfaceProtocol;
 			}
 		}
+		else if (descrType == USB_DESCR_TYP_HID)
+		{
+			//HID descriptor
+			pHidDescr = (USB_HID_DESCR *)pDescr;
+			pUsbDevice->Interface[pItfDescr->bInterfaceNumber].ReportSize = pHidDescr->wDescriptorLengthL | (pHidDescr->wDescriptorLengthH << 8);
+		}
 		else if (descrType == USB_DESCR_TYP_ENDP)
 		{
 			//endpoint descriptor
