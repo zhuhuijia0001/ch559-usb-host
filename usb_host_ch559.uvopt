@@ -293,10 +293,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>18</ColumnNumber>
+      <ColumnNumber>22</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>925</TopLine>
-      <CurrentLine>925</CurrentLine>
+      <TopLine>1140</TopLine>
+      <CurrentLine>1154</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\UsbHost.c</PathWithFileName>
       <FilenameWithoutPath>UsbHost.c</FilenameWithoutPath>
@@ -393,7 +393,7 @@
       <Focus>0</Focus>
       <ColumnNumber>34</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>286</TopLine>
+      <TopLine>290</TopLine>
       <CurrentLine>298</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\IpPs2Mouse.c</PathWithFileName>
@@ -2076,14 +2076,14 @@
         <Doc>
           <Name>.\IpPs2Mouse.c</Name>
           <ColumnNumber>34</ColumnNumber>
-          <TopLine>286</TopLine>
+          <TopLine>290</TopLine>
           <CurrentLine>298</CurrentLine>
         </Doc>
         <Doc>
           <Name>.\UsbHost.c</Name>
-          <ColumnNumber>18</ColumnNumber>
-          <TopLine>925</TopLine>
-          <CurrentLine>925</CurrentLine>
+          <ColumnNumber>22</ColumnNumber>
+          <TopLine>1140</TopLine>
+          <CurrentLine>1154</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>

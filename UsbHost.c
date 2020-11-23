@@ -365,9 +365,9 @@ static UINT8 USBHostTransact(UINT8 endp_pid, UINT8 tog, UINT16 timeout)
         {
             USB_INT_FG = 0xFF;                                   //清中断标志
         }
-        mDelayuS( 15 );
+        mDelayuS( 25 );
     }
-    while ( ++ TransRetry < 30 );
+    while ( ++ TransRetry < 60 );
 
 	TRACE1("quit at line %d\r\n", (UINT16)__LINE__);
 	
@@ -396,7 +396,7 @@ static UINT8 HostCtrlTransfer(const USB_SETUP_REQ *const pSetupReq, UINT8 MaxPac
     
     UH_TX_LEN = sizeof( USB_SETUP_REQ );
     
-    s = USBHostTransact( USB_PID_SETUP << 4 | 0x00, 0x00, 200000/20 );// SETUP阶段,200mS超时
+    s = USBHostTransact( USB_PID_SETUP << 4 | 0x00, 0x00, 200000/10 );// SETUP阶段,200mS超时
     if ( s != ERR_SUCCESS )
     { 	
     	TRACE1("quit at line %d\r\n", (UINT16)__LINE__);
@@ -1105,6 +1105,8 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 		if (RootHubPort[port].UsbDevice.DeviceClass == USB_DEV_CLASS_HUB)
 		{
 			//hub
+			USB_HUB_DESCR *pHubDescr;
+			
 			UINT8 hubPortNum;
 			UINT16 hubPortStatus, hubPortChange;
 			USB_DEVICE *pUsbDevice = &RootHubPort[port].UsbDevice;
@@ -1122,8 +1124,9 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 		
 			TRACE("GetHubDescriptor OK\r\n");
 			TRACE1("len=%d\r\n", len);
-		
-			hubPortNum = ((USB_HUB_DESCR *)ReceiveDataBuffer)->bNbrPorts;
+
+			pHubDescr = (USB_HUB_DESCR *)ReceiveDataBuffer;
+			hubPortNum = pHubDescr->bNbrPorts;
 		
 			TRACE1("hubPortNum=%bd\r\n", hubPortNum);
 		
@@ -1143,13 +1146,14 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 					TRACE1("SetHubPortFeature %d failed\r\n", (UINT16)i);
 					
 					SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
-				
+					
 					continue;	
 				}
 				
 				TRACE("SetHubPortFeature OK\r\n");
 			}
 
+/*
 			for (i = 0; i < hubPortNum; i++)
             {
                 s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_C_PORT_CONNECTION );
@@ -1162,7 +1166,7 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 
                 TRACE("ClearHubPortFeature OK\r\n");
             }
-		
+*/		
 			for (i = 0; i < hubPortNum; i++)
 			{	
 				mDelaymS(50);
@@ -1173,9 +1177,13 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 				if (s != ERR_SUCCESS)
 				{
 					SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
-		
+
+					TRACE1("GetHubPortStatus port:%d failed\r\n", (UINT16)(i + 1));
+					
 					return FALSE;
 				}
+
+				TRACE2("hubPortStatus:0x%02X,hubPortChange:0x%02X\r\n", hubPortStatus, hubPortChange);
 				
 				if ((hubPortStatus & 0x0001) && (hubPortChange & 0x0001))
 				{
@@ -1184,27 +1192,41 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 
 					TRACE("device attached\r\n");
 
-					mDelaymS(100);
+					s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_C_PORT_CONNECTION);
+					if (s != ERR_SUCCESS)
+					{
+						SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
+						TRACE("ClearHubPortFeature failed\r\n");
+			
+						return FALSE;			
+					}
+		
+					TRACE("ClearHubPortFeature OK\r\n");
 					
 					s = SetHubPortFeature(pUsbDevice, i + 1, HUB_PORT_RESET);		//reset the port device
 					if (s != ERR_SUCCESS)
 					{
 						SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
-			
+
+						TRACE1("SetHubPortFeature port:%d failed\r\n", (UINT16)(i + 1));
+						
 						return FALSE;
 					}
-		
+
+					mDelaymS(100);
 					do
 					{
 						s = GetHubPortStatus(pUsbDevice, i + 1, &hubPortStatus, &hubPortChange);
 						if (s != ERR_SUCCESS)
 						{
 							SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
-				
+
+							TRACE1("GetHubPortStatus port:%d failed\r\n", (UINT16)(i + 1));
+							
 							return FALSE;
 						}
 
-						mDelaymS(1);
+						mDelaymS(20);
 					} while (hubPortStatus & 0x0010);
 		
 					if ((hubPortChange & 0x10) == 0x10)					//reset over success
@@ -1224,7 +1246,6 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 							SubHubPort[port][i].UsbDevice.DeviceSpeed = FULL_SPEED;
 								
 							TRACE("full speed device\r\n");
-							
 						}
 						
 						s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_PORT_RESET);
@@ -1247,19 +1268,8 @@ static BOOL EnumerateRootHubPort(UINT8 port)
 						}
 			
 						TRACE("ClearHubPortFeature OK\r\n");
-			
-						s = ClearHubPortFeature(pUsbDevice, i + 1, HUB_C_PORT_CONNECTION);
-						if (s != ERR_SUCCESS)
-						{
-							SubHubPort[port][i].HubPortStatus = PORT_DEVICE_ENUM_FAILED;
-							TRACE("ClearHubPortFeature failed\r\n");
-				
-							return FALSE;			
-						}
-			
-						TRACE("ClearHubPortFeature OK\r\n");
 
-						mDelaymS(100);
+						mDelaymS(500);
 						
 						SelectHubPort(port, i);
 
@@ -1368,7 +1378,7 @@ void DealUsbPort(void)			//main function should use it at least 500ms
 	{
 		UINT8 i;
 
-		mDelaymS(100);
+		mDelaymS(150);
 		for (i = 0; i < ROOT_HUB_PORT_NUM; i++)
 		{
 			EnumerateRootHubPort(i);
