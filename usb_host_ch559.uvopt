@@ -293,10 +293,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>22</ColumnNumber>
+      <ColumnNumber>40</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>1140</TopLine>
-      <CurrentLine>1154</CurrentLine>
+      <TopLine>1141</TopLine>
+      <CurrentLine>1156</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\UsbHost.c</PathWithFileName>
       <FilenameWithoutPath>UsbHost.c</FilenameWithoutPath>
@@ -413,11 +413,25 @@
       <PathWithFileName>.\ParseDescriptor.c</PathWithFileName>
       <FilenameWithoutPath>ParseDescriptor.c</FilenameWithoutPath>
     </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>24</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>1</TopLine>
+      <CurrentLine>1</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\SendBuffer.c</PathWithFileName>
+      <FilenameWithoutPath>SendBuffer.c</FilenameWithoutPath>
+    </File>
   </Group>
 
   <Group>
     <GroupName>Header</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <File>
@@ -727,6 +741,34 @@
       <bDave2>0</bDave2>
       <PathWithFileName>.\ParseDescriptor.h</PathWithFileName>
       <FilenameWithoutPath>ParseDescriptor.h</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>5</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\Fifo.h</PathWithFileName>
+      <FilenameWithoutPath>Fifo.h</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>5</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\SendBuffer.h</PathWithFileName>
+      <FilenameWithoutPath>SendBuffer.h</FilenameWithoutPath>
     </File>
   </Group>
 
@@ -2081,9 +2123,9 @@
         </Doc>
         <Doc>
           <Name>.\UsbHost.c</Name>
-          <ColumnNumber>22</ColumnNumber>
-          <TopLine>1140</TopLine>
-          <CurrentLine>1154</CurrentLine>
+          <ColumnNumber>40</ColumnNumber>
+          <TopLine>1141</TopLine>
+          <CurrentLine>1156</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>

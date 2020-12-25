@@ -15,6 +15,8 @@
 #include "RecvBuffer.h"
 #include "Protocol.h"
 
+#include "SendBuffer.h"
+
 #include "Ps2Keyboard.h"
 #include "Ps2Mouse.h"
 
@@ -48,7 +50,7 @@ void Uart0Isr(void) interrupt INT_NO_UART0 using 1
 	{
 		TI = 0;
 
-		SetUart0Sent();
+		SendBufferIsr();
 	}
 }
 
@@ -131,6 +133,7 @@ void InitSystem(void)
     SET_GPIO_BIT(PIN_TEST_LED);
 #endif
 
+	InitSendBuffer();
 	InitRecvBuffer();
 	
 	InitTimer2();
@@ -197,7 +200,7 @@ void ProcessPs2Port()
 		{
 			if (pktLen == KEYBOARD_LEN + 2)
 			{
-				CH559UART0SendData(output, pktLen);
+				AppendSendBuffer(output, pktLen);
 			}
 		}
 	}
@@ -239,7 +242,7 @@ void ProcessPs2Port()
 		{
 			if (pktLen == MOUSE_LEN + 2)
 			{
-				CH559UART0SendData(output, pktLen);
+				AppendSendBuffer(output, pktLen);
 			}
 		}
 	}
@@ -283,7 +286,7 @@ void ProcessIpPs2Port()
 		{
 			if (pktLen == KEYBOARD_LEN + 2)
 			{
-				CH559UART0SendData(output, pktLen);
+				AppendSendBuffer(output, pktLen);
 			}
 		}
 	}
@@ -325,7 +328,7 @@ void ProcessIpPs2Port()
 		{
 			if (pktLen == MOUSE_LEN + 2)
 			{
-				CH559UART0SendData(output, pktLen);
+				AppendSendBuffer(output, pktLen);
 			}
 		}
 	}

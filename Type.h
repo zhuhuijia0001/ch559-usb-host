@@ -139,6 +139,15 @@ typedef const unsigned char code      *PUINT8C;
 
 typedef bit             bool;
 
+typedef unsigned char  uint8_t;
+typedef signed char    int8_t;
+
+typedef unsigned short uint16_t;
+typedef signed short   int16_t;
+
+typedef unsigned long  uint32_t;
+typedef signed long    int32_t;
+
 typedef unsigned char   uchar;
 typedef unsigned short  ushort;
 typedef unsigned int    uint;

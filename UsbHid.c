@@ -1,7 +1,7 @@
 #include "Type.h"
 #include "Protocol.h"
 
-#include "Uart.h"
+#include "SendBuffer.h"
 
 #include "UsbDef.h"
 #include "UsbHost.h"
@@ -56,7 +56,7 @@ void ProcessHIDData(INTERFACE *pInterface, const UINT8 *pData, UINT16 len)
 #else
 				if (pktLen == KEYBOARD_LEN + 2)
 				{
-					CH559UART0SendData(buffer, pktLen);
+					AppendSendBuffer(buffer, pktLen);
 				}
 #endif
 			}
@@ -79,7 +79,7 @@ void ProcessHIDData(INTERFACE *pInterface, const UINT8 *pData, UINT16 len)
 #else	
 				if (pktLen == MOUSE_LEN + 2)
 				{
-					CH559UART0SendData(buffer, pktLen);
+					AppendSendBuffer(buffer, pktLen);
 				}
 #endif
 			}

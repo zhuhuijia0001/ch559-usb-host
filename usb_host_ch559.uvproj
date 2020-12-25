@@ -436,6 +436,11 @@
               <FileType>1</FileType>
               <FilePath>.\ParseDescriptor.c</FilePath>
             </File>
+            <File>
+              <FileName>SendBuffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\SendBuffer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -550,6 +555,16 @@
               <FileName>ParseDescriptor.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\ParseDescriptor.h</FilePath>
+            </File>
+            <File>
+              <FileName>Fifo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Fifo.h</FilePath>
+            </File>
+            <File>
+              <FileName>SendBuffer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\SendBuffer.h</FilePath>
             </File>
           </Files>
         </Group>
